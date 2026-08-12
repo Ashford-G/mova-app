@@ -35,10 +35,60 @@
         <button type="submit">Update my position</button>
       </form>
     </section>
+
+    <section class="card">
+      <h2>Log a transaction</h2>
+      <form id="txnForm">
+        <label>Type
+          <select id="txnType">
+            <option value="expense">Expense</option>
+            <option value="income">Income</option>
+          </select>
+        </label>
+        <label>Amount <input type="number" id="txnAmount" step="0.01" placeholder="0.00" required></label>
+        <label>Category
+          <select id="txnCategory">
+            <option>Food</option>
+            <option>Transport</option>
+            <option>Airtime & Data</option>
+            <option>Rent</option>
+            <option>Bills</option>
+            <option>Health</option>
+            <option>Shopping</option>
+            <option>Entertainment</option>
+            <option>Savings</option>
+            <option>Income</option>
+            <option>Other</option>
+          </select>
+        </label>
+        <label>Account
+          <select id="txnAccount">
+            <option>Bank</option>
+            <option>EcoCash</option>
+            <option>InnBucks</option>
+            <option>Cash</option>
+          </select>
+        </label>
+        <label>Note <input type="text" id="txnNote" placeholder="e.g. Kombi fare"></label>
+        <button type="submit">Add transaction</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Spending by category</h2>
+      <canvas id="spendChart" height="200"></canvas>
+    </section>
+
+    <section class="card">
+      <h2>Recent transactions</h2>
+      <ul id="txnList"></ul>
+    </section>
   </main>
 
-  <footer><p>MOVA v0.1 — Phase 1: Money Intelligence</p></footer>
+  <footer><p>MOVA v0.2 — Phase 1: Money Intelligence</p></footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="app.js"></script>
+  <script src="transactions.js"></script>
 </body>
 </html>
