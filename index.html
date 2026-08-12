@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOVA — Your Money Operating System</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>MOVA</h1>
+    <p class="tagline">Your Money. Your Protection. Your Intelligence.</p>
+  </header>
+
+  <main>
+    <section class="card" id="summary">
+      <h2>True Money Position</h2>
+      <div class="stat"><span>Total available</span><strong id="totalAvailable">$0</strong></div>
+      <div class="stat"><span>Safe-to-spend</span><strong id="safeToSpend">$0</strong></div>
+      <div class="stat"><span>Upcoming obligations</span><strong id="obligationsOut">$0</strong></div>
+      <div class="stat"><span>Savings</span><strong id="savingsOut">$0</strong></div>
+      <div class="stat"><span>Debt</span><strong id="debtOut">$0</strong></div>
+    </section>
+
+    <section class="card">
+      <h2>Where's my money?</h2>
+      <form id="moneyForm">
+        <label>Bank <input type="number" id="bank" step="0.01" placeholder="0.00"></label>
+        <label>EcoCash <input type="number" id="ecocash" step="0.01" placeholder="0.00"></label>
+        <label>InnBucks <input type="number" id="innbucks" step="0.01" placeholder="0.00"></label>
+        <label>Cash <input type="number" id="cash" step="0.01" placeholder="0.00"></label>
+        <label>Savings <input type="number" id="savings" step="0.01" placeholder="0.00"></label>
+        <label>Debt owed by me <input type="number" id="debt" step="0.01" placeholder="0.00"></label>
+        <label>Upcoming bills <input type="number" id="bills" step="0.01" placeholder="0.00"></label>
+        <button type="submit">Update my position</button>
+      </form>
+    </section>
+  </main>
+
+  <footer><p>MOVA v0.1 — Phase 1: Money Intelligence</p></footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
