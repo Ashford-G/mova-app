@@ -47,3 +47,21 @@ button {
   font-size: 15px;
 }
 footer { text-align: center; color: #64748b; font-size: 12px; margin-top: 20px; }
+
+select { 
+  background: #0f172a; border: 1px solid #334155; border-radius: 8px;
+  padding: 10px; color: #f1f5f9; font-size: 15px;
+}
+#txnList { list-style: none; }
+#txnList li {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 0; border-bottom: 1px solid #334155; font-size: 14px;
+}
+#txnList .txn-meta { color: #94a3b8; font-size: 12px; }
+.txn-amount.expense { color: #f87171; }
+.txn-amount.income { color: #22c55e; }
+.delete-btn {
+  background: transparent; color: #64748b; border: none; font-size: 18px;
+  padding: 0 8px; margin-top: 0;
+}
+
