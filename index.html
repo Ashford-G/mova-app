@@ -5,168 +5,338 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#07111f">
   <meta name="description" content="MOVA — Your Money. Your Protection. Your Intelligence.">
-
-  <title>MOVA — Money Operating System</title>
-
-  <link rel="stylesheet" href="styles.css">
+  <title>MOVA V2 — Money Operating System</title>
+  <link rel="stylesheet" href="./styles.css">
 </head>
-
 <body>
 
-  <!-- APP -->
-  <div class="app">
+<div id="authScreen" class="auth-screen">
+  <div class="auth-brand">
+    <div class="logo-mark">M</div>
+    <div>
+      <strong>MOVA</strong>
+      <span>Money Operating System</span>
+    </div>
+  </div>
 
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
+  <div class="auth-card">
 
-      <div class="logo">
-        <div class="logo-mark">M</div>
-        <div>
-          <strong>MOVA</strong>
-          <span>Money Intelligence</span>
-        </div>
+    <div id="authStep1">
+      <span class="eyebrow">WELCOME TO MOVA V2</span>
+      <h1>Your money deserves intelligence.</h1>
+      <p class="auth-copy">
+        Create your MOVA account and choose how you want to use
+        your financial command center.
+      </p>
+
+      <div class="plan-grid">
+
+        <button class="plan-card selected"
+                data-plan="free"
+                onclick="selectPlan('free')">
+
+          <span class="plan-badge">FREE</span>
+
+          <h3>MOVA Free</h3>
+
+          <div class="price">
+            $0 <small>/ forever</small>
+          </div>
+
+          <ul>
+            <li>Money dashboard</li>
+            <li>Basic transactions</li>
+            <li>Goals & debt tracking</li>
+            <li>Basic MOVA Safe</li>
+          </ul>
+
+        </button>
+
+
+        <button class="plan-card"
+                data-plan="pro"
+                onclick="selectPlan('pro')">
+
+          <span class="plan-badge pro">7-DAY FREE TRIAL</span>
+
+          <h3>MOVA Pro</h3>
+
+          <div class="price">
+            $5 <small>/ month after trial</small>
+          </div>
+
+          <ul>
+            <li>Advanced MOVA Score</li>
+            <li>AI financial intelligence</li>
+            <li>Unlimited MOVA Safe</li>
+            <li>Advanced MOVA Price</li>
+            <li>Smart alerts & insights</li>
+          </ul>
+
+        </button>
+
       </div>
 
-      <nav>
-        <button class="nav-item active" data-page="dashboard">
-          <span>⌂</span>
-          Dashboard
-        </button>
+      <button class="primary wide"
+              onclick="continueToAccount()">
+        Continue
+      </button>
 
-        <button class="nav-item" data-page="intelligence">
-          <span>◉</span>
-          Intelligence
-        </button>
+      <p class="tiny-note">
+        You can change your plan later.
+        No real payment is taken in this V2 prototype.
+      </p>
 
-        <button class="nav-item" data-page="safe">
-          <span>🛡</span>
-          MOVA Safe
-        </button>
+    </div>
 
-        <button class="nav-item" data-page="price">
-          <span>🛒</span>
-          MOVA Price
-        </button>
 
-        <button class="nav-item" data-page="goals">
-          <span>◎</span>
-          Goals
-        </button>
+    <div id="authStep2" class="hidden">
 
-        <button class="nav-item" data-page="coach">
-          <span>✦</span>
-          AI Coach
-        </button>
-      </nav>
+      <span class="eyebrow">CREATE YOUR ACCOUNT</span>
 
-      <div class="sidebar-bottom">
-        <button class="nav-item" data-page="profile">
-          <span>◯</span>
-          Profile
-        </button>
+      <h1>Let's set up MOVA.</h1>
 
-        <div class="premium-card">
-          <div class="premium-icon">✦</div>
-          <strong>MOVA Premium</strong>
-          <p>Unlock deeper financial intelligence.</p>
-          <button onclick="openPremium()">Explore Premium</button>
-        </div>
+      <p class="auth-copy">
+        Your account keeps your financial profile, goals,
+        debts and transactions together.
+      </p>
+
+      <label>Full name</label>
+      <input
+        id="signupName"
+        class="field"
+        placeholder="Your name"
+      >
+
+      <label>Email</label>
+      <input
+        id="signupEmail"
+        class="field"
+        type="email"
+        placeholder="you@example.com"
+      >
+
+      <label>Password</label>
+      <input
+        id="signupPassword"
+        class="field"
+        type="password"
+        placeholder="Create a password"
+      >
+
+      <div id="trialNotice" class="trial-notice"></div>
+
+      <button class="primary wide"
+              onclick="createAccount()">
+        Create MOVA account
+      </button>
+
+      <button class="secondary wide"
+              onclick="backToPlans()">
+        ← Change plan
+      </button>
+
+      <p class="tiny-note">
+        Prototype only: connect real authentication and payment before launch.
+      </p>
+
+    </div>
+
+  </div>
+</div>
+
+
+<div id="app" class="app hidden">
+
+  <aside class="sidebar">
+
+    <div class="logo">
+      <div class="logo-mark">M</div>
+
+      <div>
+        <strong>MOVA</strong>
+        <span>Money Intelligence</span>
       </div>
+    </div>
 
-    </aside>
+
+    <nav>
+
+      <button class="nav-item active"
+              data-page="dashboard"
+              onclick="openPage('dashboard')">
+        <span>⌂</span>
+        Dashboard
+      </button>
+
+      <button class="nav-item"
+              data-page="intelligence"
+              onclick="openPage('intelligence')">
+        <span>◉</span>
+        Intelligence
+      </button>
+
+      <button class="nav-item"
+              data-page="safe"
+              onclick="openPage('safe')">
+        <span>🛡</span>
+        MOVA Safe
+      </button>
+
+      <button class="nav-item"
+              data-page="price"
+              onclick="openPage('price')">
+        <span>🛒</span>
+        MOVA Price
+      </button>
+
+      <button class="nav-item"
+              data-page="goals"
+              onclick="openPage('goals')">
+        <span>◎</span>
+        Goals
+      </button>
+
+      <button class="nav-item"
+              data-page="debts"
+              onclick="openPage('debts')">
+        <span>↘</span>
+        Debts
+      </button>
+
+      <button class="nav-item"
+              data-page="transactions"
+              onclick="openPage('transactions')">
+        <span>↔</span>
+        Transactions
+      </button>
+
+      <button class="nav-item"
+              data-page="profile"
+              onclick="openPage('profile')">
+        <span>◯</span>
+        Financial Profile
+      </button>
+
+      <button class="nav-item"
+              data-page="coach"
+              onclick="openPage('coach')">
+        <span>✦</span>
+        AI Coach
+      </button>
+
+    </nav>
 
 
-    <!-- MAIN -->
-    <main class="main">
+    <div class="sidebar-bottom">
 
-      <!-- TOPBAR -->
-      <header class="topbar">
+      <div class="plan-mini" id="planMini"></div>
 
-        <button class="mobile-menu" onclick="toggleSidebar()">☰</button>
+      <button class="nav-item"
+              onclick="openPremium()">
+        <span>✦</span>
+        Upgrade
+      </button>
+
+      <button class="nav-item"
+              onclick="logout()">
+        <span>↪</span>
+        Log out
+      </button>
+
+    </div>
+
+  </aside>
+
+
+  <main class="main">
+
+    <header class="topbar">
+
+      <div class="title-wrap">
+
+        <button class="mobile-menu"
+                onclick="toggleSidebar()">
+          ☰
+        </button>
 
         <div>
-          <p class="eyebrow">THURSDAY, AUGUST 13</p>
-          <h1 id="pageTitle">Good afternoon, welcome back.</h1>
+
+          <p class="eyebrow"
+             id="dateLabel"></p>
+
+          <h1 id="pageTitle">
+            Good afternoon, welcome back.
+          </h1>
+
         </div>
 
-        <div class="top-actions">
-          <button class="icon-button" onclick="showNotification()">🔔</button>
+      </div>
 
-          <div class="avatar">
-            MS
-          </div>
+
+      <div class="top-actions">
+
+        <button class="icon-button"
+                onclick="showNotification()">
+          🔔
+        </button>
+
+        <div class="avatar"
+             id="avatar">
+          MS
         </div>
 
-      </header>
+      </div>
+
+    </header>
 
 
-      <!-- DASHBOARD -->
-      <section class="page active-page" id="dashboard">
+    <!-- DASHBOARD -->
 
-        <div class="hero-grid">
+    <section class="page active-page"
+             id="dashboard">
 
-          <div class="balance-card">
+      <div class="hero-grid">
 
-            <div class="card-header">
-              <div>
-                <span class="label">TRUE MONEY POSITION</span>
-                <h2 id="totalBalance">$487.00</h2>
-              </div>
+        <div class="balance-card">
 
-              <button class="more">•••</button>
-            </div>
+          <div class="card-header">
 
-            <div class="balance-details">
+            <div>
 
-              <div>
-                <span>Safe to spend</span>
-                <strong>$212</strong>
-              </div>
+              <span class="label">
+                TRUE MONEY POSITION
+              </span>
 
-              <div>
-                <span>Upcoming</span>
-                <strong>$175</strong>
-              </div>
-
-              <div>
-                <span>Savings</span>
-                <strong>$100</strong>
-              </div>
+              <h2 id="totalBalance">
+                $487.00
+              </h2>
 
             </div>
+
+            <button class="more"
+                    onclick="openPage('profile')">
+              •••
+            </button>
 
           </div>
 
 
-          <!-- SCORE -->
-          <div class="score-card">
+          <div class="balance-details">
 
-            <div class="score-header">
-              <span class="label">MOVA SCORE</span>
-              <span class="info">?</span>
+            <div>
+              <span>Safe to spend</span>
+              <strong id="safeSpend">$212</strong>
             </div>
 
-            <div class="score-content">
+            <div>
+              <span>Upcoming</span>
+              <strong id="upcoming">$175</strong>
+            </div>
 
-              <div class="score-circle">
-                <div>
-                  <strong>74</strong>
-                  <span>/100</span>
-                </div>
-              </div>
-
-              <div class="score-text">
-                <strong>Financially Stable</strong>
-                <p>
-                  Your finances are healthy, but discretionary spending is
-                  slightly above your normal level.
-                </p>
-
-                <button onclick="openPage('intelligence')">
-                  View analysis →
-                </button>
-              </div>
-
+            <div>
+              <span>Savings</span>
+              <strong id="savings">$100</strong>
             </div>
 
           </div>
@@ -174,117 +344,47 @@
         </div>
 
 
-        <!-- QUICK ACTIONS -->
-        <div class="section-heading">
-          <div>
-            <span class="label">QUICK ACTIONS</span>
-            <h2>What do you want to do?</h2>
-          </div>
-        </div>
+        <div class="score-card">
 
-        <div class="quick-grid">
+          <div class="score-header">
 
-          <button class="quick-card" onclick="openPage('intelligence')">
-            <span class="quick-icon blue">+</span>
-            <strong>Add transaction</strong>
-            <small>Record income or spending</small>
-          </button>
+            <span class="label">
+              MOVA SCORE
+            </span>
 
-          <button class="quick-card" onclick="openPage('safe')">
-            <span class="quick-icon red">🛡</span>
-            <strong>Check something</strong>
-            <small>Scan a suspicious message</small>
-          </button>
-
-          <button class="quick-card" onclick="openPage('price')">
-            <span class="quick-icon green">⌕</span>
-            <strong>Check a price</strong>
-            <small>Find the right price</small>
-          </button>
-
-          <button class="quick-card" onclick="openPage('coach')">
-            <span class="quick-icon purple">✦</span>
-            <strong>Ask MOVA</strong>
-            <small>Get financial guidance</small>
-          </button>
-
-        </div>
-
-
-        <!-- DASHBOARD GRID -->
-        <div class="dashboard-grid">
-
-          <!-- SPENDING -->
-          <div class="panel">
-
-            <div class="panel-header">
-              <div>
-                <span class="label">SPENDING</span>
-                <h2>This month</h2>
-              </div>
-
-              <span class="panel-value">$438</span>
-            </div>
-
-            <div class="chart">
-
-              <div class="chart-bars">
-
-                <div class="bar-wrap">
-                  <div class="bar" style="height:45%"></div>
-                  <span>W1</span>
-                </div>
-
-                <div class="bar-wrap">
-                  <div class="bar" style="height:62%"></div>
-                  <span>W2</span>
-                </div>
-
-                <div class="bar-wrap">
-                  <div class="bar" style="height:52%"></div>
-                  <span>W3</span>
-                </div>
-
-                <div class="bar-wrap">
-                  <div class="bar highlight" style="height:82%"></div>
-                  <span>W4</span>
-                </div>
-
-              </div>
-
-            </div>
+            <span class="info">
+              ?
+            </span>
 
           </div>
 
 
-          <!-- INSIGHTS -->
-          <div class="panel">
+          <div class="score-content">
 
-            <div class="panel-header">
+            <div class="score-circle">
+
               <div>
-                <span class="label">MOVA INTELLIGENCE</span>
-                <h2>Today's insight</h2>
+                <strong id="score">74</strong>
+                <span>/100</span>
               </div>
 
-              <span class="insight-icon">✦</span>
             </div>
 
-            <div class="insight">
 
-              <h3>Your spending increased this week.</h3>
+            <div class="score-text">
 
-              <p>
-                You spent approximately 18% more on discretionary purchases
-                than your normal weekly average.
+              <strong id="scoreStatus">
+                Financially Stable
+              </strong>
+
+              <p id="scoreSummary">
+                Your finances are healthy,
+                but discretionary spending is
+                slightly above your normal level.
               </p>
 
-              <div class="insight-action">
-                <span>Potential saving</span>
-                <strong>$34</strong>
-              </div>
-
               <button onclick="openPage('intelligence')">
-                See full analysis →
+                View analysis →
               </button>
 
             </div>
@@ -293,497 +393,1058 @@
 
         </div>
 
+      </div>
 
-        <!-- RECENT TRANSACTIONS -->
-        <div class="panel transactions-panel">
+
+      <div class="section-heading">
+
+        <span class="label">
+          QUICK ACTIONS
+        </span>
+
+        <h2>
+          What do you want to do?
+        </h2>
+
+      </div>
+
+
+      <div class="quick-grid">
+
+        <button class="quick-card"
+                onclick="openPage('transactions')">
+
+          <span class="quick-icon blue">
+            +
+          </span>
+
+          <strong>
+            Add transaction
+          </strong>
+
+          <small>
+            Record income or spending
+          </small>
+
+        </button>
+
+
+        <button class="quick-card"
+                onclick="openPage('safe')">
+
+          <span class="quick-icon red">
+            🛡
+          </span>
+
+          <strong>
+            Check something
+          </strong>
+
+          <small>
+            Scan a suspicious message
+          </small>
+
+        </button>
+
+
+        <button class="quick-card"
+                onclick="openPage('price')">
+
+          <span class="quick-icon green">
+            ⌕
+          </span>
+
+          <strong>
+            Check a price
+          </strong>
+
+          <small>
+            Find the right price
+          </small>
+
+        </button>
+
+
+        <button class="quick-card"
+                onclick="openPage('coach')">
+
+          <span class="quick-icon purple">
+            ✦
+          </span>
+
+          <strong>
+            Ask MOVA
+          </strong>
+
+          <small>
+            Get financial guidance
+          </small>
+
+        </button>
+
+      </div>
+
+
+      <div class="dashboard-grid">
+
+        <div class="panel">
 
           <div class="panel-header">
 
             <div>
-              <span class="label">ACTIVITY</span>
-              <h2>Recent transactions</h2>
+
+              <span class="label">
+                SPENDING
+              </span>
+
+              <h2>
+                This month
+              </h2>
+
             </div>
 
-            <button onclick="openPage('intelligence')" class="text-button">
-              View all →
+            <span class="panel-value"
+                  id="monthlySpend">
+              $438
+            </span>
+
+          </div>
+
+
+          <div class="chart">
+
+            <div class="chart-bars">
+
+              <div class="bar-wrap">
+                <div class="bar"
+                     style="height:45%">
+                </div>
+                <span>W1</span>
+              </div>
+
+              <div class="bar-wrap">
+                <div class="bar"
+                     style="height:62%">
+                </div>
+                <span>W2</span>
+              </div>
+
+              <div class="bar-wrap">
+                <div class="bar"
+                     style="height:52%">
+                </div>
+                <span>W3</span>
+              </div>
+
+              <div class="bar-wrap">
+                <div class="bar highlight"
+                     style="height:82%">
+                </div>
+                <span>W4</span>
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <div class="panel">
+
+          <div class="panel-header">
+
+            <div>
+
+              <span class="label">
+                MOVA INTELLIGENCE
+              </span>
+
+              <h2>
+                Today's insight
+              </h2>
+
+            </div>
+
+            <span class="insight-icon">
+              ✦
+            </span>
+
+          </div>
+
+
+          <div class="insight">
+
+            <h3>
+              Protect your next $50.
+            </h3>
+
+            <p>
+              Based on your current financial profile,
+              setting aside $50 before your next
+              discretionary purchase would improve
+              your buffer.
+            </p>
+
+            <div class="insight-action">
+
+              <span>
+                Potential saving
+              </span>
+
+              <strong>
+                $34
+              </strong>
+
+            </div>
+
+            <button onclick="openPage('intelligence')">
+              See full analysis →
             </button>
 
           </div>
 
-          <div class="transactions">
-
-            <div class="transaction">
-              <div class="transaction-icon">🛒</div>
-
-              <div>
-                <strong>Grocery shopping</strong>
-                <small>Today · EcoCash</small>
-              </div>
-
-              <strong class="expense">-$32.50</strong>
-            </div>
-
-            <div class="transaction">
-              <div class="transaction-icon">📱</div>
-
-              <div>
-                <strong>Airtime</strong>
-                <small>Yesterday · InnBucks</small>
-              </div>
-
-              <strong class="expense">-$5.00</strong>
-            </div>
-
-            <div class="transaction">
-              <div class="transaction-icon">💰</div>
-
-              <div>
-                <strong>Salary</strong>
-                <small>Aug 10 · Bank</small>
-              </div>
-
-              <strong class="income">+$650.00</strong>
-            </div>
-
-          </div>
-
         </div>
-
-      </section>
-
-
-      <!-- INTELLIGENCE -->
-      <section class="page" id="intelligence">
-
-        <div class="page-heading">
-          <span class="label">MOVA INTELLIGENCE</span>
-          <h2>Your financial command center.</h2>
-          <p>
-            MOVA analyses your money and turns financial data into decisions.
-          </p>
-        </div>
-
-        <div class="intelligence-grid">
-
-          <div class="big-score">
-
-            <span class="label">FINANCIAL INTELLIGENCE SCORE</span>
-
-            <div class="large-score">
-              74
-              <small>/100</small>
-            </div>
-
-            <strong>Good financial health</strong>
-
-            <p>
-              You're moving in the right direction. Your biggest opportunity
-              is controlling discretionary spending.
-            </p>
-
-          </div>
-
-
-          <div class="analysis-list">
-
-            <div class="analysis-item positive">
-              <span>↑</span>
-              <div>
-                <strong>Income stability</strong>
-                <p>Your income has remained consistent.</p>
-              </div>
-              <b>82</b>
-            </div>
-
-            <div class="analysis-item warning">
-              <span>!</span>
-              <div>
-                <strong>Spending control</strong>
-                <p>Discretionary spending is increasing.</p>
-              </div>
-              <b>61</b>
-            </div>
-
-            <div class="analysis-item positive">
-              <span>✓</span>
-              <div>
-                <strong>Savings behaviour</strong>
-                <p>You're consistently saving.</p>
-              </div>
-              <b>78</b>
-            </div>
-
-            <div class="analysis-item warning">
-              <span>!</span>
-              <div>
-                <strong>Financial buffer</strong>
-                <p>Your emergency buffer could be stronger.</p>
-              </div>
-              <b>65</b>
-            </div>
-
-          </div>
-
-        </div>
-
-
-        <div class="recommendation panel">
-
-          <div class="recommendation-icon">✦</div>
-
-          <div>
-            <span class="label">MOVA RECOMMENDS</span>
-
-            <h3>Protect your next $50.</h3>
-
-            <p>
-              Based on your recent spending pattern, setting aside $50 before
-              your next discretionary purchase would improve your financial
-              buffer.
-            </p>
-          </div>
-
-          <button onclick="openPage('goals')">
-            Create goal
-          </button>
-
-        </div>
-
-      </section>
-
-
-      <!-- MOVA SAFE -->
-      <section class="page" id="safe">
-
-        <div class="page-heading">
-          <span class="label">MOVA SAFE</span>
-          <h2>Check before you pay.</h2>
-          <p>
-            Analyse suspicious messages, numbers, businesses and payment
-            requests before sending your money.
-          </p>
-        </div>
-
-
-        <div class="safe-container">
-
-          <div class="safe-scanner">
-
-            <div class="scanner-icon">🛡</div>
-
-            <h3>What would you like to check?</h3>
-
-            <textarea
-              id="safeInput"
-              placeholder="Paste a message, phone number, payment request or website here..."
-            ></textarea>
-
-            <button class="primary-button" onclick="scanSafe()">
-              Scan with MOVA Safe
-            </button>
-
-            <div id="safeResult" class="safe-result hidden"></div>
-
-          </div>
-
-
-          <div class="safe-tips">
-
-            <span class="label">MOVA SAFETY</span>
-
-            <h3>Common warning signs</h3>
-
-            <div class="tip">
-              <span>01</span>
-              <p>Requests for OTPs or passwords</p>
-            </div>
-
-            <div class="tip">
-              <span>02</span>
-              <p>Urgent payment requests</p>
-            </div>
-
-            <div class="tip">
-              <span>03</span>
-              <p>Promises of guaranteed returns</p>
-            </div>
-
-            <div class="tip">
-              <span>04</span>
-              <p>Unknown payment recipients</p>
-            </div>
-
-          </div>
-
-        </div>
-
-      </section>
-
-
-      <!-- MOVA PRICE -->
-      <section class="page" id="price">
-
-        <div class="page-heading">
-          <span class="label">MOVA PRICE</span>
-          <h2>Know what things should cost.</h2>
-          <p>
-            Compare prices and make smarter purchasing decisions.
-          </p>
-        </div>
-
-        <div class="price-search">
-
-          <input
-            id="priceInput"
-            type="text"
-            placeholder="Search a product e.g. Samsung A16"
-          >
-
-          <button onclick="searchPrice()">Search</button>
-
-        </div>
-
-        <div id="priceResults" class="price-results">
-
-          <div class="empty-state">
-            <span>⌕</span>
-            <h3>Search for a product</h3>
-            <p>
-              MOVA will eventually compare verified merchants, community
-              prices and historical data.
-            </p>
-          </div>
-
-        </div>
-
-      </section>
-
-
-      <!-- GOALS -->
-      <section class="page" id="goals">
-
-        <div class="page-heading">
-
-          <span class="label">FINANCIAL GOALS</span>
-
-          <h2>Give your money a destination.</h2>
-
-          <p>
-            Build goals and let MOVA help you stay on track.
-          </p>
-
-        </div>
-
-
-        <div class="goals-grid">
-
-          <div class="goal-card">
-
-            <div class="goal-top">
-              <span>Emergency Fund</span>
-              <strong>68%</strong>
-            </div>
-
-            <div class="progress">
-              <div style="width:68%"></div>
-            </div>
-
-            <div class="goal-bottom">
-              <span>$680 saved</span>
-              <span>Target $1,000</span>
-            </div>
-
-          </div>
-
-
-          <div class="goal-card">
-
-            <div class="goal-top">
-              <span>New Laptop</span>
-              <strong>35%</strong>
-            </div>
-
-            <div class="progress">
-              <div style="width:35%"></div>
-            </div>
-
-            <div class="goal-bottom">
-              <span>$350 saved</span>
-              <span>Target $1,000</span>
-            </div>
-
-          </div>
-
-
-          <button class="new-goal" onclick="createGoal()">
-            <span>+</span>
-            <strong>Create new goal</strong>
-          </button>
-
-        </div>
-
-      </section>
-
-
-      <!-- AI COACH -->
-      <section class="page" id="coach">
-
-        <div class="page-heading">
-
-          <span class="label">MOVA AI COACH</span>
-
-          <h2>Your money, explained.</h2>
-
-          <p>
-            Ask MOVA questions about your financial situation.
-          </p>
-
-        </div>
-
-
-        <div class="coach">
-
-          <div class="chat-window" id="chatWindow">
-
-            <div class="message ai">
-
-              <div class="message-avatar">M</div>
-
-              <div>
-                <strong>MOVA</strong>
-                <p>
-                  Hi. I'm your MOVA financial intelligence assistant.
-                  Ask me something like:
-                  <br><br>
-                  “Can I afford to spend $50 this week?”
-                </p>
-              </div>
-
-            </div>
-
-          </div>
-
-
-          <div class="chat-input">
-
-            <input
-              id="chatInput"
-              type="text"
-              placeholder="Ask MOVA anything about your money..."
-              onkeydown="handleChat(event)"
-            >
-
-            <button onclick="sendMessage()">➤</button>
-
-          </div>
-
-        </div>
-
-      </section>
-
-
-      <!-- PROFILE -->
-      <section class="page" id="profile">
-
-        <div class="page-heading">
-
-          <span class="label">PROFILE</span>
-
-          <h2>Your MOVA account.</h2>
-
-        </div>
-
-        <div class="profile-card">
-
-          <div class="profile-avatar">MS</div>
-
-          <h3>MOVA User</h3>
-
-          <p>Free account</p>
-
-          <button class="primary-button" onclick="openPremium()">
-            Upgrade to MOVA Premium
-          </button>
-
-        </div>
-
-      </section>
-
-    </main>
-
-
-    <!-- MOBILE NAV -->
-    <nav class="mobile-nav">
-
-      <button onclick="openPage('dashboard')">
-        <span>⌂</span>
-        Home
-      </button>
-
-      <button onclick="openPage('intelligence')">
-        <span>◉</span>
-        Money
-      </button>
-
-      <button onclick="openPage('safe')">
-        <span>🛡</span>
-        Safe
-      </button>
-
-      <button onclick="openPage('price')">
-        <span>🛒</span>
-        Price
-      </button>
-
-      <button onclick="openPage('coach')">
-        <span>✦</span>
-        AI
-      </button>
-
-    </nav>
-
-  </div>
-
-
-  <!-- PREMIUM MODAL -->
-  <div class="modal hidden" id="premiumModal">
-
-    <div class="modal-content">
-
-      <button class="modal-close" onclick="closePremium()">×</button>
-
-      <div class="premium-symbol">✦</div>
-
-      <span class="label">MOVA PREMIUM</span>
-
-      <h2>Your money should work smarter.</h2>
-
-      <p>
-        Unlock deeper intelligence designed to help you understand,
-        protect and improve your financial life.
-      </p>
-
-      <div class="premium-features">
-
-        <div>✓ Advanced MOVA Score</div>
-        <div>✓ AI financial analysis</div>
-        <div>✓ Unlimited MOVA Safe scans</div>
-        <div>✓ Advanced price intelligence</div>
-        <div>✓ Spending behaviour analysis</div>
-        <div>✓ Personalized financial alerts</div>
 
       </div>
 
-      <button class="primary-button">
-        Premium — Coming Soon
-      </button>
+
+      <div class="panel transactions-panel">
+
+        <div class="panel-header">
+
+          <div>
+
+            <span class="label">
+              ACTIVITY
+            </span>
+
+            <h2>
+              Recent transactions
+            </h2>
+
+          </div>
+
+          <button onclick="openPage('transactions')"
+                  class="text-button">
+            View all →
+          </button>
+
+        </div>
+
+        <div class="transactions"
+             id="recentTransactions">
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- INTELLIGENCE -->
+
+    <section class="page"
+             id="intelligence">
+
+      <div class="page-heading">
+
+        <span class="label">
+          MOVA INTELLIGENCE
+        </span>
+
+        <h2>
+          Your financial command center.
+        </h2>
+
+        <p>
+          MOVA turns your income, expenses,
+          savings, goals and debts into decisions.
+        </p>
+
+      </div>
+
+
+      <div class="intelligence-grid">
+
+        <div class="big-score">
+
+          <span class="label">
+            FINANCIAL INTELLIGENCE SCORE
+          </span>
+
+          <div class="large-score">
+
+            <span id="largeScore">
+              74
+            </span>
+
+            <small>
+              /100
+            </small>
+
+          </div>
+
+          <strong id="largeScoreStatus">
+            Good financial health
+          </strong>
+
+          <p id="largeScoreText">
+            Your biggest opportunity is controlling
+            discretionary spending while building
+            your financial buffer.
+          </p>
+
+        </div>
+
+
+        <div class="analysis-list"
+             id="analysisList">
+        </div>
+
+      </div>
+
+
+      <div class="recommendation panel">
+
+        <div class="recommendation-icon">
+          ✦
+        </div>
+
+        <div>
+
+          <span class="label">
+            MOVA RECOMMENDS
+          </span>
+
+          <h3>
+            Build your financial buffer.
+          </h3>
+
+          <p>
+            Use your goals and spending data
+            to protect money before it gets spent.
+          </p>
+
+        </div>
+
+        <button onclick="openPage('goals')">
+          Create goal
+        </button>
+
+      </div>
+
+    </section>
+
+
+    <!-- MOVA SAFE -->
+
+    <section class="page"
+             id="safe">
+
+      <div class="page-heading">
+
+        <span class="label">
+          MOVA SAFE
+        </span>
+
+        <h2>
+          Check before you pay.
+        </h2>
+
+        <p>
+          Analyse suspicious messages, numbers,
+          businesses and payment requests.
+        </p>
+
+      </div>
+
+
+      <div class="safe-container">
+
+        <div class="safe-scanner">
+
+          <div class="scanner-icon">
+            🛡
+          </div>
+
+          <h3>
+            What would you like to check?
+          </h3>
+
+          <textarea
+            id="safeInput"
+            placeholder="Paste a message, phone number, payment request or website here..."
+          ></textarea>
+
+          <button class="primary"
+                  onclick="scanSafe()">
+            Scan with MOVA Safe
+          </button>
+
+          <div id="safeResult"
+               class="safe-result hidden">
+          </div>
+
+        </div>
+
+
+        <div class="safe-tips">
+
+          <span class="label">
+            MOVA SAFETY
+          </span>
+
+          <h3>
+            Common warning signs
+          </h3>
+
+          <div class="tip">
+            <span>01</span>
+            <p>
+              Requests for OTPs or passwords
+            </p>
+          </div>
+
+          <div class="tip">
+            <span>02</span>
+            <p>
+              Urgent payment requests
+            </p>
+          </div>
+
+          <div class="tip">
+            <span>03</span>
+            <p>
+              Promises of guaranteed returns
+            </p>
+          </div>
+
+          <div class="tip">
+            <span>04</span>
+            <p>
+              Unknown payment recipients
+            </p>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- MOVA PRICE -->
+
+    <section class="page"
+             id="price">
+
+      <div class="page-heading">
+
+        <span class="label">
+          MOVA PRICE
+        </span>
+
+        <h2>
+          Know what things should cost.
+        </h2>
+
+        <p>
+          Compare prices and make smarter
+          purchasing decisions.
+        </p>
+
+      </div>
+
+
+      <div class="price-search">
+
+        <input
+          id="priceInput"
+          placeholder="Search a product e.g. Samsung A16"
+        >
+
+        <button onclick="searchPrice()">
+          Search
+        </button>
+
+      </div>
+
+
+      <div id="priceResults">
+
+        <div class="empty-state">
+
+          <span>
+            ⌕
+          </span>
+
+          <h3>
+            Search for a product
+          </h3>
+
+          <p>
+            MOVA will compare verified merchants,
+            community prices and historical data.
+          </p>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- GOALS -->
+
+    <section class="page"
+             id="goals">
+
+      <div class="page-heading">
+
+        <span class="label">
+          GOALS
+        </span>
+
+        <h2>
+          Give your money a destination.
+        </h2>
+
+        <p>
+          Create targets, deadlines and required
+          monthly contributions.
+        </p>
+
+      </div>
+
+
+      <div class="goal-form panel">
+
+        <div>
+
+          <span class="label">
+            NEW GOAL
+          </span>
+
+          <h3>
+            Create a financial target
+          </h3>
+
+        </div>
+
+        <input
+          id="goalName"
+          class="field"
+          placeholder="Goal name e.g. Emergency Fund"
+        >
+
+        <div class="form-row">
+
+          <input
+            id="goalTarget"
+            class="field"
+            type="number"
+            placeholder="Target amount"
+          >
+
+          <input
+            id="goalCurrent"
+            class="field"
+            type="number"
+            placeholder="Current amount"
+          >
+
+        </div>
+
+        <input
+          id="goalDeadline"
+          class="field"
+          type="date"
+        >
+
+        <button class="primary"
+                onclick="createGoal()">
+          Create goal
+        </button>
+
+      </div>
+
+
+      <div class="goals-grid"
+           id="goalsGrid">
+      </div>
+
+    </section>
+
+
+    <!-- DEBTS -->
+
+    <section class="page"
+             id="debts">
+
+      <div class="page-heading">
+
+        <span class="label">
+          DEBT MANAGEMENT
+        </span>
+
+        <h2>
+          Know what you owe.
+        </h2>
+
+        <p>
+          Track balances, interest, payments
+          and deadlines.
+        </p>
+
+      </div>
+
+
+      <div class="goal-form panel">
+
+        <span class="label">
+          ADD DEBT
+        </span>
+
+        <h3>
+          Record an obligation
+        </h3>
+
+        <div class="form-row">
+
+          <input
+            id="debtName"
+            class="field"
+            placeholder="Debt name"
+          >
+
+          <input
+            id="debtBalance"
+            class="field"
+            type="number"
+            placeholder="Balance"
+          >
+
+        </div>
+
+
+        <div class="form-row">
+
+          <input
+            id="debtInterest"
+            class="field"
+            type="number"
+            placeholder="Interest %"
+          >
+
+          <input
+            id="debtPayment"
+            class="field"
+            type="number"
+            placeholder="Payment amount"
+          >
+
+        </div>
+
+
+        <button class="primary"
+                onclick="createDebt()">
+          Add debt
+        </button>
+
+      </div>
+
+
+      <div class="debt-grid"
+           id="debtGrid">
+      </div>
+
+    </section>
+
+
+    <!-- TRANSACTIONS -->
+
+    <section class="page"
+             id="transactions">
+
+      <div class="page-heading">
+
+        <span class="label">
+          TRANSACTIONS
+        </span>
+
+        <h2>
+          Everything your money does.
+        </h2>
+
+        <p>
+          Amount, category, date and description.
+        </p>
+
+      </div>
+
+
+      <div class="goal-form panel">
+
+        <span class="label">
+          NEW TRANSACTION
+        </span>
+
+        <h3>
+          Record money movement
+        </h3>
+
+
+        <div class="form-row">
+
+          <select id="txType"
+                  class="field">
+
+            <option value="expense">
+              Expense
+            </option>
+
+            <option value="income">
+              Income
+            </option>
+
+          </select>
+
+
+          <input
+            id="txAmount"
+            class="field"
+            type="number"
+            placeholder="Amount"
+          >
+
+        </div>
+
+
+        <div class="form-row">
+
+          <input
+            id="txCategory"
+            class="field"
+            placeholder="Category"
+          >
+
+          <input
+            id="txDate"
+            class="field"
+            type="date"
+          >
+
+        </div>
+
+
+        <input
+          id="txDescription"
+          class="field"
+          placeholder="Description"
+        >
+
+
+        <button class="primary"
+                onclick="addTransaction()">
+          Save transaction
+        </button>
+
+      </div>
+
+
+      <div class="panel transactions-panel">
+
+        <div class="transactions"
+             id="allTransactions">
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- FINANCIAL PROFILE -->
+
+    <section class="page"
+             id="profile">
+
+      <div class="page-heading">
+
+        <span class="label">
+          FINANCIAL PROFILE
+        </span>
+
+        <h2>
+          Your financial foundation.
+        </h2>
+
+        <p>
+          Income, expenses, savings and currency.
+        </p>
+
+      </div>
+
+
+      <div class="profile-form panel">
+
+        <div class="form-row">
+
+          <div>
+
+            <label>
+              Monthly income
+            </label>
+
+            <input
+              id="profileIncome"
+              class="field"
+              type="number"
+            >
+
+          </div>
+
+
+          <div>
+
+            <label>
+              Monthly expenses
+            </label>
+
+            <input
+              id="profileExpenses"
+              class="field"
+              type="number"
+            >
+
+          </div>
+
+        </div>
+
+
+        <div class="form-row">
+
+          <div>
+
+            <label>
+              Savings
+            </label>
+
+            <input
+              id="profileSavings"
+              class="field"
+              type="number"
+            >
+
+          </div>
+
+
+          <div>
+
+            <label>
+              Currency
+            </label>
+
+            <select
+              id="profileCurrency"
+              class="field">
+
+              <option>USD</option>
+              <option>ZWG</option>
+              <option>ZAR</option>
+
+            </select>
+
+          </div>
+
+        </div>
+
+
+        <button class="primary"
+                onclick="saveProfile()">
+          Save financial profile
+        </button>
+
+      </div>
+
+    </section>
+
+
+    <!-- AI COACH -->
+
+    <section class="page"
+             id="coach">
+
+      <div class="page-heading">
+
+        <span class="label">
+          MOVA AI COACH
+        </span>
+
+        <h2>
+          Your money, explained.
+        </h2>
+
+        <p>
+          Ask MOVA about spending, goals,
+          savings and debt.
+        </p>
+
+      </div>
+
+
+      <div class="coach">
+
+        <div class="chat-window"
+             id="chatWindow">
+
+          <div class="message ai">
+
+            <div class="message-avatar">
+              M
+            </div>
+
+            <div>
+
+              <strong>
+                MOVA
+              </strong>
+
+              <p>
+                I'm ready. Ask me something like
+                “Can I afford to spend $50 this week?”
+              </p>
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <div class="chat-input">
+
+          <input
+            id="chatInput"
+            placeholder="Ask MOVA anything about your money..."
+            onkeydown="handleChat(event)"
+          >
+
+          <button onclick="sendMessage()">
+            ➤
+          </button>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <nav class="mobile-nav">
+
+    <button onclick="openPage('dashboard')">
+      <span>⌂</span>
+      Home
+    </button>
+
+    <button onclick="openPage('intelligence')">
+      <span>◉</span>
+      Money
+    </button>
+
+    <button onclick="openPage('safe')">
+      <span>🛡</span>
+      Safe
+    </button>
+
+    <button onclick="openPage('price')">
+      <span>🛒</span>
+      Price
+    </button>
+
+    <button onclick="openPage('coach')">
+      <span>✦</span>
+      AI
+    </button>
+
+  </nav>
+
+</div>
+
+
+<!-- PREMIUM MODAL -->
+
+<div id="premiumModal"
+     class="modal hidden">
+
+  <div class="modal-content">
+
+    <button class="modal-close"
+            onclick="closePremium()">
+      ×
+    </button>
+
+    <div class="premium-symbol">
+      ✦
+    </div>
+
+    <span class="label">
+      MOVA PRO
+    </span>
+
+    <h2>
+      Unlock the full intelligence layer.
+    </h2>
+
+    <p>
+      7 days free, then $5/month.
+      Payment integration will be connected
+      before production launch.
+    </p>
+
+
+    <div class="premium-features">
+
+      <div>
+        ✓ Advanced MOVA Score
+      </div>
+
+      <div>
+        ✓ AI financial intelligence
+      </div>
+
+      <div>
+        ✓ Unlimited MOVA Safe scans
+      </div>
+
+      <div>
+        ✓ Advanced price intelligence
+      </div>
+
+      <div>
+        ✓ Smart financial alerts
+      </div>
+
+      <div>
+        ✓ Advanced behaviour analysis
+      </div>
 
     </div>
 
+
+    <button class="primary wide"
+            onclick="startProTrial()">
+      Start 7-day Pro trial
+    </button>
+
   </div>
 
+</div>
 
-  <script src="app.js"></script>
+
+<script src="./app.js"></script>
 
 </body>
 </html>
