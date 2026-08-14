@@ -1,520 +1,495 @@
-/* =====================================================
-   MOVA V3
-   Supabase-powered frontend
-===================================================== */
+/* ============================================================
+   MOVA V4
+   Money Operating System
+   ============================================================ */
 
 
-/* =====================================================
-   SUPABASE CONFIG
-=====================================================
+/* ============================================================
+   SUPABASE CONFIGURATION
+   ============================================================
 
    IMPORTANT:
-   Replace the two values below with your Supabase
-   project URL and PUBLISHABLE/ANON key.
 
-   NEVER put the Supabase service_role key here.
-===================================================== */
+   Replace the two values below.
+
+   DO NOT put your Supabase SECRET key here.
+
+   Use:
+   1. Project URL
+   2. Publishable key
+
+   ============================================================ */
 
 const SUPABASE_URL =
-  " https://nqcxolvcakmmpcdxqpb.supabase.co ";
+  "PASTE_YOUR_SUPABASE_PROJECT_URL_HERE";
 
-const SUPABASE_KEY =
-  "sb_publishable_DD6vSjZ0HLFggyg-ttpMkQ_DWGpaUdh";
+const SUPABASE_PUBLISHABLE_KEY =
+  "PASTE_YOUR_SUPABASE_PUBLISHABLE_KEY_HERE";
 
 
 const supabaseClient =
   window.supabase.createClient(
     SUPABASE_URL,
-    SUPABASE_KEY
+    SUPABASE_PUBLISHABLE_KEY
   );
 
 
-/* =====================================================
-   STATE
-===================================================== */
+/* ============================================================
+   GLOBAL STATE
+   ============================================================ */
 
 let currentUser = null;
-let selectedPlan = "pro";
+let currentProfile = null;
+let selectedPlan = "free";
+
 let transactions = [];
 let goals = [];
+let debts = [];
 
 
-/* =====================================================
-   DOM
-===================================================== */
+/* ============================================================
+   DOM HELPERS
+   ============================================================ */
 
-const authScreen =
-  document.getElementById("authScreen");
+const $ = (selector) =>
+  document.querySelector(selector);
 
-const appScreen =
-  document.getElementById("appScreen");
-
-const loginForm =
-  document.getElementById("loginForm");
-
-const signupForm =
-  document.getElementById("signupForm");
-
-const authMessage =
-  document.getElementById("authMessage");
+const $$ = (selector) =>
+  document.querySelectorAll(selector);
 
 
-/* =====================================================
-   START
-===================================================== */
+/* ============================================================
+   AUTH UI
+   ============================================================ */
 
-document.addEventListener("DOMContentLoaded", async () => {
+function showAuthMessage(message, type = "") {
 
-  setCurrentDate();
+  const box = $("#authMessage");
 
-  setTodayDate();
+  box.textContent = message;
 
-  passwordStrengthListener();
-
-  await checkSession();
-
-});
+  box.className =
+    `message ${type}`;
+}
 
 
-/* =====================================================
-   SESSION
-===================================================== */
+function switchToSignup() {
 
-async function checkSession() {
+  $("#loginForm").classList.add("hidden");
+  $("#signupForm").classList.remove("hidden");
 
-  try {
+  $("#authTitle").textContent =
+    "Build your financial command center.";
 
-    const {
-      data: { session }
-    } = await supabaseClient.auth.getSession();
+  $("#authSubtitle").textContent =
+    "Create your MOVA account and start your 7-day Pro experience.";
 
-    if (session) {
+  $("#switchText").textContent =
+    "Already have an account?";
 
-      currentUser = session.user;
+  $("#switchAuth").textContent =
+    "Sign in";
 
-      await showApp();
+  showAuthMessage("");
+}
+
+
+function switchToLogin() {
+
+  $("#signupForm").classList.add("hidden");
+  $("#loginForm").classList.remove("hidden");
+
+  $("#authTitle").textContent =
+    "Welcome back.";
+
+  $("#authSubtitle").textContent =
+    "Understand your money. Protect your money. Make better decisions.";
+
+  $("#switchText").textContent =
+    "Don't have an account?";
+
+  $("#switchAuth").textContent =
+    "Create account";
+
+  showAuthMessage("");
+}
+
+
+/* ============================================================
+   AUTH SWITCH
+   ============================================================ */
+
+$("#switchAuth").addEventListener(
+  "click",
+  () => {
+
+    if (
+      $("#signupForm").classList.contains("hidden")
+    ) {
+
+      switchToSignup();
 
     } else {
 
-      showAuth();
+      switchToLogin();
 
     }
 
-  } catch (error) {
-
-    console.error(error);
-
-    showAuth();
-
   }
+);
 
-}
 
+/* ============================================================
+   PLAN SELECTOR
+   ============================================================ */
 
-/* =====================================================
-   AUTH UI
-===================================================== */
+$$(".plan-card").forEach(card => {
 
-function showAuth() {
+  card.addEventListener(
+    "click",
+    () => {
 
-  authScreen.classList.remove("hidden");
+      $$(".plan-card").forEach(c =>
+        c.classList.remove("selected")
+      );
 
-  appScreen.classList.add("hidden");
+      card.classList.add("selected");
 
-}
+      selectedPlan =
+        card.dataset.plan;
 
+    }
+  );
 
-function showLogin() {
+});
 
-  loginForm.classList.remove("hidden");
 
-  signupForm.classList.add("hidden");
+/* ============================================================
+   PASSWORD TOGGLE
+   ============================================================ */
 
-  document
-    .getElementById("loginTab")
-    .classList.add("active");
+$$(".password-toggle").forEach(button => {
 
-  document
-    .getElementById("signupTab")
-    .classList.remove("active");
+  button.addEventListener(
+    "click",
+    () => {
 
-  document.getElementById("authTitle").textContent =
-    "Welcome back.";
+      const input =
+        document.getElementById(
+          button.dataset.target
+        );
 
-  document.getElementById("authSubtitle").textContent =
-    "Sign in to your financial command center.";
+      if (input.type === "password") {
 
-  clearMessage();
+        input.type = "text";
 
-}
+      } else {
 
-
-function showSignup() {
-
-  signupForm.classList.remove("hidden");
-
-  loginForm.classList.add("hidden");
-
-  document
-    .getElementById("signupTab")
-    .classList.add("active");
-
-  document
-    .getElementById("loginTab")
-    .classList.remove("active");
-
-  document.getElementById("authTitle").textContent =
-    "Build your money system.";
-
-  document.getElementById("authSubtitle").textContent =
-    "Create your MOVA account in less than a minute.";
-
-  clearMessage();
-
-}
-
-
-function clearMessage() {
-
-  authMessage.textContent = "";
-
-}
-
-
-/* =====================================================
-   PLAN
-===================================================== */
-
-function selectPlan(plan) {
-
-  selectedPlan = plan;
-
-  document
-    .getElementById("freePlan")
-    .classList.remove("selected");
-
-  document
-    .getElementById("proPlan")
-    .classList.remove("selected");
-
-  document
-    .getElementById(
-      plan === "free" ? "freePlan" : "proPlan"
-    )
-    .classList.add("selected");
-
-}
-
-
-/* =====================================================
-   PASSWORD
-===================================================== */
-
-function togglePassword(id) {
-
-  const input = document.getElementById(id);
-
-  input.type =
-    input.type === "password"
-      ? "text"
-      : "password";
-
-}
-
-
-function passwordStrengthListener() {
-
-  const password =
-    document.getElementById("signupPassword");
-
-  password.addEventListener("input", () => {
-
-    const value = password.value;
-
-    let strength = 0;
-
-    if (value.length >= 8)
-      strength++;
-
-    if (/[A-Z]/.test(value))
-      strength++;
-
-    if (/[0-9]/.test(value))
-      strength++;
-
-    if (/[^A-Za-z0-9]/.test(value))
-      strength++;
-
-    const bar =
-      document.getElementById("passwordStrength");
-
-    bar.className =
-      "password-strength";
-
-    if (strength === 1)
-      bar.classList.add("weak");
-
-    if (strength === 2)
-      bar.classList.add("medium");
-
-    if (strength === 3)
-      bar.classList.add("strong");
-
-    if (strength >= 4)
-      bar.classList.add("very-strong");
-
-  });
-
-}
-
-
-/* =====================================================
-   SIGN UP
-===================================================== */
-
-signupForm.addEventListener("submit", async (event) => {
-
-  event.preventDefault();
-
-  const name =
-    document.getElementById("signupName").value.trim();
-
-  const email =
-    document.getElementById("signupEmail").value.trim();
-
-  const password =
-    document.getElementById("signupPassword").value;
-
-  const terms =
-    document.getElementById("terms").checked;
-
-
-  if (!terms) {
-
-    showMessage(
-      "Please accept the Terms and Privacy Policy.",
-      true
-    );
-
-    return;
-
-  }
-
-
-  showMessage("Creating your MOVA account...");
-
-
-  try {
-
-    const {
-      data,
-      error
-    } = await supabaseClient.auth.signUp({
-
-      email,
-
-      password,
-
-      options: {
-
-        data: {
-
-          full_name: name,
-
-          selected_plan: selectedPlan
-
-        }
+        input.type = "password";
 
       }
 
-    });
+    }
+  );
+
+});
 
 
-    if (error)
-      throw error;
+/* ============================================================
+   SIGN UP
+   ============================================================ */
 
+$("#signupForm").addEventListener(
+  "submit",
+  async (event) => {
 
-    /*
-      Supabase may require email confirmation
-      depending on your Auth settings.
-    */
+    event.preventDefault();
 
-    if (!data.session) {
+    showAuthMessage(
+      "Creating your MOVA account..."
+    );
 
-      showMessage(
-        "Account created. Check your email to confirm your account."
+    const name =
+      $("#signupName").value.trim();
+
+    const email =
+      $("#signupEmail").value.trim();
+
+    const password =
+      $("#signupPassword").value;
+
+    if (password.length < 8) {
+
+      showAuthMessage(
+        "Password must contain at least 8 characters.",
+        "error"
       );
 
       return;
-
     }
 
 
-    currentUser = data.user;
+    try {
 
-    await showApp();
+      const {
+        data,
+        error
+      } =
+        await supabaseClient.auth.signUp({
 
+          email,
 
-  } catch (error) {
+          password,
 
-    console.error(error);
+          options: {
 
-    showMessage(
-      error.message || "Unable to create account.",
-      true
-    );
+            data: {
 
-  }
+              full_name: name,
 
-});
+              selected_plan:
+                selectedPlan
 
+            },
 
-/* =====================================================
-   LOGIN
-===================================================== */
+            emailRedirectTo:
+              window.location.origin
 
-loginForm.addEventListener("submit", async (event) => {
+          }
 
-  event.preventDefault();
-
-
-  const email =
-    document.getElementById("loginEmail").value.trim();
-
-  const password =
-    document.getElementById("loginPassword").value;
+        });
 
 
-  showMessage("Signing you in...");
+      if (error)
+        throw error;
 
 
-  try {
+      if (data.session) {
 
-    const {
-      data,
-      error
-    } = await supabaseClient.auth.signInWithPassword({
+        showAuthMessage(
+          "Account created. Welcome to MOVA.",
+          "success"
+        );
 
-      email,
+        await loadApplication();
 
-      password
+      } else {
 
-    });
+        showAuthMessage(
+          "Account created. Check your email to confirm your account.",
+          "success"
+        );
 
+      }
 
-    if (error)
-      throw error;
+    } catch (error) {
 
+      console.error(error);
 
-    currentUser = data.user;
+      showAuthMessage(
+        error.message ||
+        "Unable to create your account.",
+        "error"
+      );
 
-    await showApp();
-
-
-  } catch (error) {
-
-    console.error(error);
-
-    showMessage(
-      error.message || "Unable to sign in.",
-      true
-    );
+    }
 
   }
+);
 
-});
+
+/* ============================================================
+   SIGN IN
+   ============================================================ */
+
+$("#loginForm").addEventListener(
+  "submit",
+  async (event) => {
+
+    event.preventDefault();
+
+    showAuthMessage(
+      "Signing you in..."
+    );
+
+    const email =
+      $("#loginEmail").value.trim();
+
+    const password =
+      $("#loginPassword").value;
 
 
-/* =====================================================
-   PASSWORD RESET
-===================================================== */
+    try {
 
-async function forgotPassword() {
+      const {
+        data,
+        error
+      } =
+        await supabaseClient.auth.signInWithPassword({
 
-  const email =
-    prompt("Enter the email address connected to your MOVA account:");
+          email,
 
-  if (!email)
+          password
+
+        });
+
+
+      if (error)
+        throw error;
+
+
+      currentUser =
+        data.user;
+
+      await loadApplication();
+
+    } catch (error) {
+
+      console.error(error);
+
+      showAuthMessage(
+        error.message ||
+        "Unable to sign in.",
+        "error"
+      );
+
+    }
+
+  }
+);
+
+
+/* ============================================================
+   FORGOT PASSWORD
+   ============================================================ */
+
+$("#forgotPassword").addEventListener(
+  "click",
+  async () => {
+
+    const email =
+      $("#loginEmail").value.trim();
+
+    if (!email) {
+
+      showAuthMessage(
+        "Enter your email address first.",
+        "error"
+      );
+
+      return;
+    }
+
+
+    try {
+
+      const {
+        error
+      } =
+        await supabaseClient.auth
+          .resetPasswordForEmail(
+            email,
+            {
+              redirectTo:
+                window.location.origin
+            }
+          );
+
+
+      if (error)
+        throw error;
+
+
+      showAuthMessage(
+        "Password reset instructions sent to your email.",
+        "success"
+      );
+
+    } catch (error) {
+
+      showAuthMessage(
+        error.message,
+        "error"
+      );
+
+    }
+
+  }
+);
+
+
+/* ============================================================
+   AUTH STATE
+   ============================================================ */
+
+supabaseClient.auth.onAuthStateChange(
+  async (event, session) => {
+
+    if (session?.user) {
+
+      currentUser =
+        session.user;
+
+      await loadApplication();
+
+    } else {
+
+      showAuthScreen();
+
+    }
+
+  }
+);
+
+
+/* ============================================================
+   LOAD APPLICATION
+   ============================================================ */
+
+async function loadApplication() {
+
+  if (!currentUser)
     return;
 
+  $("#authScreen")
+    .classList.add("hidden");
 
-  try {
+  $("#appScreen")
+    .classList.remove("hidden");
 
-    const {
-      error
-    } = await supabaseClient.auth.resetPasswordForEmail(
-      email,
-      {
-        redirectTo:
-          window.location.origin
-      }
-    );
-
-
-    if (error)
-      throw error;
-
-
-    alert(
-      "Password reset instructions have been sent to your email."
-    );
-
-
-  } catch (error) {
-
-    alert(
-      error.message ||
-      "Unable to send password reset email."
-    );
-
-  }
-
-}
-
-
-/* =====================================================
-   SHOW APPLICATION
-===================================================== */
-
-async function showApp() {
-
-  authScreen.classList.add("hidden");
-
-  appScreen.classList.remove("hidden");
 
   await loadProfile();
-
-  await loadFinancialProfile();
 
   await loadTransactions();
 
   await loadGoals();
 
-  await loadSubscription();
+  await loadDebts();
 
-  calculateDashboard();
+  updateDashboard();
+
+  updateIntelligence();
+
+  updateProfile();
 
 }
 
 
-/* =====================================================
-   PROFILE
-===================================================== */
+/* ============================================================
+   LOAD PROFILE
+   ============================================================ */
 
 async function loadProfile() {
 
-  if (!currentUser)
-    return;
-
-
   const {
     data,
     error
-  } = await supabaseClient
-    .from("profiles")
-    .select("*")
-    .eq("id", currentUser.id)
-    .maybeSingle();
+  } =
+    await supabaseClient
+      .from("profiles")
+      .select("*")
+      .eq("id", currentUser.id)
+      .maybeSingle();
 
 
   if (error) {
@@ -522,552 +497,494 @@ async function loadProfile() {
     console.error(error);
 
     return;
-
   }
 
 
-  const name =
-    data?.full_name ||
-    currentUser.email?.split("@")[0] ||
-    "MOVA User";
+  currentProfile =
+    data;
 
 
-  document.getElementById("profileName").textContent =
-    name;
+  if (!currentProfile) {
 
+    await createProfileFallback();
 
-  document.getElementById("profileEmail").textContent =
-    currentUser.email || "—";
-
-
-  document.getElementById("userAvatar").textContent =
-    name.charAt(0).toUpperCase();
-
-
-  document.getElementById("profileAvatar").textContent =
-    name.charAt(0).toUpperCase();
+  }
 
 }
 
 
-/* =====================================================
-   FINANCIAL PROFILE
-===================================================== */
+/* ============================================================
+   PROFILE FALLBACK
+   ============================================================ */
 
-async function loadFinancialProfile() {
+async function createProfileFallback() {
 
-  if (!currentUser)
-    return;
+  const metadata =
+    currentUser.user_metadata || {};
 
 
   const {
     data,
     error
-  } = await supabaseClient
-    .from("financial_profiles")
-    .select("*")
-    .eq("user_id", currentUser.id)
-    .maybeSingle();
+  } =
+    await supabaseClient
+      .from("profiles")
+      .insert({
+
+        id:
+          currentUser.id,
+
+        full_name:
+          metadata.full_name || "",
+
+        email:
+          currentUser.email,
+
+        subscription_plan:
+          metadata.selected_plan || "free",
+
+        subscription_status:
+          "trial",
+
+        trial_started_at:
+          new Date().toISOString(),
+
+        trial_ends_at:
+          new Date(
+            Date.now() +
+            7 * 24 * 60 * 60 * 1000
+          ).toISOString()
+
+      })
+      .select()
+      .single();
 
 
-  if (error) {
-
-    console.error(error);
-
-    return;
-
-  }
-
-
-  window.financialProfile =
-    data || {
-
-      monthly_income: 0,
-
-      current_savings: 0,
-
-      currency: "USD"
-
-    };
+  if (!error)
+    currentProfile = data;
 
 }
 
 
-/* =====================================================
+/* ============================================================
    TRANSACTIONS
-===================================================== */
+   ============================================================ */
 
 async function loadTransactions() {
 
   const {
     data,
     error
-  } = await supabaseClient
-    .from("transactions")
-    .select("*")
-    .eq("user_id", currentUser.id)
-    .order("transaction_date", {
-      ascending: false
-    })
-    .limit(50);
+  } =
+    await supabaseClient
+      .from("transactions")
+      .select("*")
+      .eq("user_id", currentUser.id)
+      .order(
+        "transaction_date",
+        {
+          ascending: false
+        }
+      );
 
 
   if (error) {
 
     console.error(error);
 
-    return;
+    transactions = [];
 
+    return;
   }
 
 
-  transactions = data || [];
-
-  renderTransactions();
+  transactions =
+    data || [];
 
 }
 
 
-/* =====================================================
-   RENDER TRANSACTIONS
-===================================================== */
-
-function renderTransactions() {
-
-  const list =
-    document.getElementById("transactionsList");
-
-
-  if (!transactions.length) {
-
-    list.innerHTML = `
-      <div class="empty-state">
-        <div>◎</div>
-        <strong>No transactions yet</strong>
-        <p>Start recording your money movement.</p>
-      </div>
-    `;
-
-    return;
-
-  }
-
-
-  list.innerHTML =
-    transactions.slice(0, 8).map(t => {
-
-      const isIncome =
-        t.transaction_type === "income";
-
-
-      const sign =
-        isIncome ? "+" : "-";
-
-
-      return `
-
-        <div class="transaction-item">
-
-          <div class="transaction-info">
-
-            <div class="transaction-icon">
-              ${isIncome ? "↗" : "↘"}
-            </div>
-
-            <div>
-
-              <strong>
-                ${escapeHTML(t.category)}
-              </strong>
-
-              <small>
-                ${escapeHTML(
-                  t.description || t.transaction_date
-                )}
-              </small>
-
-            </div>
-
-          </div>
-
-          <div class="
-            transaction-amount
-            ${isIncome ? "income-type" : "expense"}
-          ">
-            ${sign}${
-              Number(t.amount).toFixed(2)
-            }
-          </div>
-
-        </div>
-
-      `;
-
-    }).join("");
-
-}
-
-
-/* =====================================================
+/* ============================================================
    ADD TRANSACTION
-===================================================== */
+   ============================================================ */
 
-document
-  .getElementById("transactionForm")
-  .addEventListener("submit", async (event) => {
+$("#transactionForm")
+  .addEventListener(
+    "submit",
+    async event => {
 
-    event.preventDefault();
+      event.preventDefault();
 
 
-    const type =
-      document.getElementById("transactionType").value;
+      const type =
+        $("#transactionType").value;
 
-    const amount =
-      Number(
-        document.getElementById("transactionAmount").value
+      const amount =
+        Number(
+          $("#transactionAmount").value
+        );
+
+      const category =
+        $("#transactionCategory").value.trim();
+
+      const description =
+        $("#transactionDescription").value.trim();
+
+      const date =
+        $("#transactionDate").value;
+
+
+      if (!amount || amount <= 0) {
+
+        showToast(
+          "Enter a valid amount."
+        );
+
+        return;
+      }
+
+
+      const {
+        error
+      } =
+        await supabaseClient
+          .from("transactions")
+          .insert({
+
+            user_id:
+              currentUser.id,
+
+            amount,
+
+            transaction_type:
+              type,
+
+            category,
+
+            description,
+
+            transaction_date:
+              date
+
+          });
+
+
+      if (error) {
+
+        console.error(error);
+
+        showToast(
+          error.message
+        );
+
+        return;
+      }
+
+
+      closeModal(
+        "transactionModal"
       );
 
-    const category =
-      document
-        .getElementById("transactionCategory")
-        .value
-        .trim();
+      event.target.reset();
 
-    const description =
-      document
-        .getElementById("transactionDescription")
-        .value
-        .trim();
+      await loadTransactions();
 
-    const date =
-      document.getElementById("transactionDate").value;
+      updateDashboard();
 
+      updateIntelligence();
 
-    const {
-      error
-    } = await supabaseClient
-      .from("transactions")
-      .insert({
-
-        user_id: currentUser.id,
-
-        transaction_type: type,
-
-        amount,
-
-        category,
-
-        description,
-
-        transaction_date: date
-
-      });
-
-
-    if (error) {
-
-      alert(error.message);
-
-      return;
+      showToast(
+        "Transaction saved."
+      );
 
     }
+  );
 
 
-    closeTransactionModal();
-
-    await loadTransactions();
-
-    calculateDashboard();
-
-  });
-
-
-/* =====================================================
+/* ============================================================
    GOALS
-===================================================== */
+   ============================================================ */
 
 async function loadGoals() {
 
   const {
     data,
     error
-  } = await supabaseClient
-    .from("goals")
-    .select("*")
-    .eq("user_id", currentUser.id)
-    .order("created_at", {
-      ascending: false
-    });
+  } =
+    await supabaseClient
+      .from("goals")
+      .select("*")
+      .eq("user_id", currentUser.id)
+      .order(
+        "created_at",
+        {
+          ascending: false
+        }
+      );
 
 
   if (error) {
 
     console.error(error);
 
-    return;
+    goals = [];
 
+    return;
   }
 
 
-  goals = data || [];
+  goals =
+    data || [];
 
   renderGoals();
 
 }
 
 
-/* =====================================================
-   RENDER GOALS
-===================================================== */
+/* ============================================================
+   CREATE GOAL
+   ============================================================ */
 
-function renderGoals() {
+$("#goalForm")
+  .addEventListener(
+    "submit",
+    async event => {
 
-  const list =
-    document.getElementById("goalsList");
-
-  const fullList =
-    document.getElementById("fullGoalsList");
+      event.preventDefault();
 
 
-  if (!goals.length) {
+      const goalName =
+        $("#goalName").value.trim();
 
-    list.innerHTML = `
-      <div class="empty-state">
-        <div>◎</div>
-        <strong>No goals yet</strong>
-        <p>Give your money a destination.</p>
-      </div>
-    `;
+      const target =
+        Number(
+          $("#goalTarget").value
+        );
 
-    fullList.innerHTML = "";
+      const current =
+        Number(
+          $("#goalCurrent").value || 0
+        );
+
+      const deadline =
+        $("#goalDeadline").value ||
+        null;
+
+
+      const {
+        error
+      } =
+        await supabaseClient
+          .from("goals")
+          .insert({
+
+            user_id:
+              currentUser.id,
+
+            goal_name:
+              goalName,
+
+            target_amount:
+              target,
+
+            current_amount:
+              current,
+
+            deadline
+
+          });
+
+
+      if (error) {
+
+        showToast(
+          error.message
+        );
+
+        return;
+      }
+
+
+      closeModal("goalModal");
+
+      event.target.reset();
+
+      await loadGoals();
+
+      showToast(
+        "Goal created."
+      );
+
+    }
+  );
+
+
+/* ============================================================
+   DEBTS
+   ============================================================ */
+
+async function loadDebts() {
+
+  const {
+    data,
+    error
+  } =
+    await supabaseClient
+      .from("debts")
+      .select("*")
+      .eq("user_id", currentUser.id);
+
+
+  if (error) {
+
+    console.error(error);
+
+    debts = [];
 
     return;
-
   }
 
 
-  const html =
-    goals.map(goal => {
-
-      const percentage =
-        goal.target_amount > 0
-          ? Math.min(
-              100,
-              (goal.current_amount /
-                goal.target_amount) * 100
-            )
-          : 0;
-
-
-      return `
-
-        <div class="goal-item">
-
-          <div class="goal-row">
-
-            <strong>
-              ${escapeHTML(goal.goal_name)}
-            </strong>
-
-            <span>
-              ${percentage.toFixed(0)}%
-            </span>
-
-          </div>
-
-          <div class="progress">
-
-            <span style="width:${percentage}%"></span>
-
-          </div>
-
-          <small style="color:#718078;font-size:9px">
-
-            $${Number(goal.current_amount).toFixed(2)}
-            /
-            $${Number(goal.target_amount).toFixed(2)}
-
-          </small>
-
-        </div>
-
-      `;
-
-    }).join("");
-
-
-  list.innerHTML = html;
-
-  fullList.innerHTML = `
-
-    <div class="panel">
-
-      ${html}
-
-    </div>
-
-  `;
+  debts =
+    data || [];
 
 }
 
 
-/* =====================================================
-   ADD GOAL
-===================================================== */
+/* ============================================================
+   DASHBOARD CALCULATIONS
+   ============================================================ */
 
-document
-  .getElementById("goalForm")
-  .addEventListener("submit", async (event) => {
+function updateDashboard() {
 
-    event.preventDefault();
+  let income = 0;
 
-
-    const name =
-      document.getElementById("goalName").value.trim();
-
-    const target =
-      Number(
-        document.getElementById("goalTarget").value
-      );
-
-    const current =
-      Number(
-        document.getElementById("goalCurrent").value || 0
-      );
-
-    const deadline =
-      document.getElementById("goalDeadline").value || null;
+  let expenses = 0;
 
 
-    const {
-      error
-    } = await supabaseClient
-      .from("goals")
-      .insert({
+  transactions.forEach(transaction => {
 
-        user_id: currentUser.id,
+    if (
+      transaction.transaction_type ===
+      "income"
+    ) {
 
-        goal_name: name,
+      income +=
+        Number(transaction.amount);
 
-        target_amount: target,
+    } else {
 
-        current_amount: current,
-
-        deadline
-
-      });
-
-
-    if (error) {
-
-      alert(error.message);
-
-      return;
+      expenses +=
+        Number(transaction.amount);
 
     }
-
-
-    closeGoalModal();
-
-    await loadGoals();
-
-    calculateDashboard();
 
   });
 
 
-/* =====================================================
-   DASHBOARD CALCULATIONS
-===================================================== */
-
-function calculateDashboard() {
-
-  const income =
-    transactions
-      .filter(t => t.transaction_type === "income")
-      .reduce(
-        (sum, t) => sum + Number(t.amount),
-        0
-      );
-
-
-  const expenses =
-    transactions
-      .filter(t => t.transaction_type === "expense")
-      .reduce(
-        (sum, t) => sum + Number(t.amount),
-        0
-      );
-
-
   const savings =
-    Number(
-      window.financialProfile?.current_savings || 0
+    currentProfile?.financial_profiles
+      ?.total_savings || 0;
+
+
+  const debtAmount =
+    debts.reduce(
+      (total, debt) =>
+        total +
+        Number(debt.balance || 0),
+      0
     );
 
 
-  const monthlyIncome =
-    Number(
-      window.financialProfile?.monthly_income || income
+  const moneyPosition =
+    income -
+    expenses -
+    debtAmount;
+
+
+  const upcoming =
+    debts.reduce(
+      (total, debt) =>
+        total +
+        Number(debt.payment_amount || 0),
+      0
     );
-
-
-  const trueMoney =
-    savings + income - expenses;
 
 
   const safeSpend =
-    Math.max(0, trueMoney);
+    Math.max(
+      0,
+      moneyPosition -
+      upcoming
+    );
 
 
-  document.getElementById("trueMoney").textContent =
-    money(trueMoney);
+  $("#trueMoneyPosition")
+    .textContent =
+      formatMoney(moneyPosition);
+
+  $("#incomeAmount")
+    .textContent =
+      formatMoney(income);
+
+  $("#savingsAmount")
+    .textContent =
+      formatMoney(savings);
+
+  $("#upcomingAmount")
+    .textContent =
+      formatMoney(upcoming);
+
+  $("#safeToSpend")
+    .textContent =
+      formatMoney(safeSpend);
 
 
-  document.getElementById("safeSpend").textContent =
-    money(safeSpend);
+  const score =
+    calculateMovaScore(
+      income,
+      expenses,
+      savings,
+      debtAmount
+    );
 
 
-  document.getElementById("savings").textContent =
-    money(savings);
+  $("#movaScore")
+    .textContent =
+      score === null
+        ? "—"
+        : score;
 
 
-  document.getElementById("income").textContent =
-    money(monthlyIncome);
+  $("#scoreText")
+    .textContent =
+      getScoreText(score);
 
 
-  document.getElementById("upcoming").textContent =
-    "$0";
-
-
-  calculateMovaScore(
-    savings,
-    income,
-    expenses
-  );
+  renderRecentTransactions();
 
 }
 
 
-/* =====================================================
+/* ============================================================
    MOVA SCORE
-===================================================== */
+   ============================================================ */
 
 function calculateMovaScore(
-  savings,
   income,
-  expenses
+  expenses,
+  savings,
+  debts
 ) {
 
-  if (!income && !savings && !expenses) {
+  if (
+    income === 0 &&
+    expenses === 0 &&
+    savings === 0 &&
+    debts === 0
+  ) {
 
-    document.getElementById("movaScore").textContent =
-      "—";
-
-    document.getElementById("scoreStatus").textContent =
-      "Add financial data";
-
-    return;
+    return null;
 
   }
 
@@ -1078,490 +995,1269 @@ function calculateMovaScore(
   if (income > expenses)
     score += 15;
 
+  if (income > 0)
+    score += 10;
 
   if (savings > 0)
     score += 10;
 
-
-  if (savings >= income)
+  if (debts === 0)
     score += 10;
 
-
-  if (expenses < income * .7)
-    score += 10;
-
-
-  score = Math.min(100, score);
-
-
-  document.getElementById("movaScore").textContent =
-    score;
+  if (
+    income > 0 &&
+    expenses / income < .7
+  )
+    score += 5;
 
 
-  let status = "Building stability";
+  return Math.min(
+    100,
+    Math.max(0, score)
+  );
+
+}
+
+
+function getScoreText(score) {
+
+  if (score === null)
+    return "Build your financial profile";
 
   if (score >= 80)
-    status = "Financially strong";
+    return "Financially strong";
 
-  else if (score >= 65)
-    status = "Financially stable";
+  if (score >= 65)
+    return "Financially stable";
 
-  else if (score >= 50)
-    status = "Needs attention";
+  if (score >= 50)
+    return "Room for improvement";
 
-  else
-    status = "High attention";
-
-
-  document.getElementById("scoreStatus").textContent =
-    status;
+  return "Needs attention";
 
 }
 
 
-/* =====================================================
-   SUBSCRIPTION
-===================================================== */
+/* ============================================================
+   RECENT TRANSACTIONS
+   ============================================================ */
 
-async function loadSubscription() {
+function renderRecentTransactions() {
 
-  const {
-    data,
-    error
-  } = await supabaseClient
-    .from("subscriptions")
-    .select("*")
-    .eq("user_id", currentUser.id)
-    .maybeSingle();
+  const container =
+    $("#recentTransactions");
 
 
-  if (error) {
+  if (!transactions.length) {
 
-    console.error(error);
+    container.innerHTML = `
+      <div class="empty-state">
+        <span>◎</span>
+        <strong>No transactions yet</strong>
+        <p>Start recording your money movement.</p>
+      </div>
+    `;
 
     return;
 
   }
 
 
-  if (!data)
+  container.innerHTML =
+    transactions
+      .slice(0, 6)
+      .map(transaction => {
+
+        const isIncome =
+          transaction.transaction_type ===
+          "income";
+
+        return `
+          <div class="activity-item">
+
+            <div class="activity-left">
+
+              <div class="activity-icon">
+                ${isIncome ? "↗" : "↘"}
+              </div>
+
+              <div>
+
+                <strong>
+                  ${escapeHTML(
+                    transaction.category
+                  )}
+                </strong>
+
+                <small>
+                  ${escapeHTML(
+                    transaction.description || ""
+                  )}
+                </small>
+
+              </div>
+
+            </div>
+
+            <strong
+              class="${isIncome ? "income" : "expense"}"
+            >
+              ${isIncome ? "+" : "-"}
+              ${formatMoney(
+                Number(transaction.amount)
+              )}
+            </strong>
+
+          </div>
+        `;
+
+      })
+      .join("");
+
+}
+
+
+/* ============================================================
+   GOAL RENDERING
+   ============================================================ */
+
+function renderGoals() {
+
+  const dashboard =
+    $("#dashboardGoals");
+
+  const page =
+    $("#goalsPageList");
+
+
+  if (!goals.length) {
+
+    dashboard.innerHTML = `
+      <div class="empty-state">
+        <span>◎</span>
+        <strong>No goals yet</strong>
+        <p>Give your money a destination.</p>
+      </div>
+    `;
+
+    page.innerHTML = `
+      <div class="empty-state">
+        <span>◎</span>
+        <strong>No financial goals</strong>
+        <p>Create your first goal.</p>
+      </div>
+    `;
+
     return;
 
-
-  const plan =
-    data.plan === "pro"
-      ? "MOVA Pro"
-      : "MOVA Free";
+  }
 
 
-  document.getElementById("subscriptionPlan")
-    .textContent = plan;
+  const html =
+    goals.map(goal => {
+
+      const target =
+        Number(goal.target_amount || 0);
+
+      const current =
+        Number(goal.current_amount || 0);
+
+      const percentage =
+        target > 0
+          ? Math.min(
+              100,
+              (current / target) * 100
+            )
+          : 0;
 
 
-  if (data.status === "trialing") {
+      return `
+        <div class="goal-card">
 
-    const end =
-      new Date(data.trial_end);
+          <h3>
+            ${escapeHTML(
+              goal.goal_name
+            )}
+          </h3>
 
-    document.getElementById("trialText")
+          <p>
+            ${goal.deadline
+              ? "Deadline: " +
+                goal.deadline
+              : "No deadline set"}
+          </p>
+
+          <div class="progress">
+            <div
+              style="width:${percentage}%"
+            ></div>
+          </div>
+
+          <div class="goal-numbers">
+
+            <span>
+              ${formatMoney(current)}
+            </span>
+
+            <span>
+              ${formatMoney(target)}
+            </span>
+
+          </div>
+
+        </div>
+      `;
+
+    }).join("");
+
+
+  dashboard.innerHTML =
+    goals
+      .slice(0, 3)
+      .map(goal => {
+
+        const percentage =
+          goal.target_amount > 0
+            ? Math.min(
+                100,
+                (
+                  goal.current_amount /
+                  goal.target_amount
+                ) * 100
+              )
+            : 0;
+
+        return `
+          <div class="goal-item">
+
+            <div>
+              <strong>
+                ${escapeHTML(goal.goal_name)}
+              </strong>
+
+              <small>
+                ${Math.round(percentage)}% complete
+              </small>
+            </div>
+
+            <strong>
+              ${formatMoney(
+                goal.target_amount
+              )}
+            </strong>
+
+          </div>
+        `;
+
+      })
+      .join("");
+
+
+  page.innerHTML =
+    html;
+
+}
+
+
+/* ============================================================
+   INTELLIGENCE
+   ============================================================ */
+
+function updateIntelligence() {
+
+  if (!transactions.length) {
+
+    $("#spendingInsight")
       .textContent =
-      `Your Pro trial ends ${end.toLocaleDateString()}.`;
-
-  }
-
-}
-
-
-/* =====================================================
-   MOVA SAFE — BASIC FRONTEND DEMO
-===================================================== */
-
-function analyzeSafe() {
-
-  const text =
-    document.getElementById("safeInput").value.trim();
-
-  const result =
-    document.getElementById("safeResult");
-
-
-  if (!text) {
-
-    result.innerHTML =
-      "<p style='color:#ff9999;margin-top:15px'>Enter something to analyze.</p>";
+        "Add transactions to generate spending intelligence.";
 
     return;
 
   }
 
 
-  const suspiciousWords = [
+  const expenses =
+    transactions.filter(
+      t =>
+        t.transaction_type ===
+        "expense"
+    );
 
-    "otp",
-    "password",
-    "send money",
-    "activate",
-    "winner",
-    "urgent",
-    "investment",
-    "verification fee",
-    "claim"
 
-  ];
+  const total =
+    expenses.reduce(
+      (sum, t) =>
+        sum +
+        Number(t.amount),
+      0
+    );
 
+
+  const categories = {};
+
+
+  expenses.forEach(t => {
+
+    const category =
+      t.category || "Other";
+
+    categories[category] =
+      (
+        categories[category] || 0
+      ) +
+      Number(t.amount);
+
+  });
+
+
+  let largestCategory =
+    "None";
+
+  let largestAmount =
+    0;
+
+
+  Object.entries(categories)
+    .forEach(
+      ([category, amount]) => {
+
+        if (amount > largestAmount) {
+
+          largestCategory =
+            category;
+
+          largestAmount =
+            amount;
+
+        }
+
+      }
+    );
+
+
+  $("#spendingInsight")
+    .textContent =
+      `You have recorded ${formatMoney(total)} in expenses. Your largest recorded spending category is ${largestCategory} at ${formatMoney(largestAmount)}.`;
+
+
+  $("#healthInsight")
+    .textContent =
+      transactions.length >= 5
+        ? "Your financial picture is becoming clearer."
+        : "Keep recording transactions for a clearer picture.";
+
+
+  $("#futureInsight")
+    .textContent =
+      total > 0
+        ? "Your spending history can now be used to build future projections."
+        : "Add financial activity to unlock projections.";
+
+}
+
+
+/* ============================================================
+   SAFE
+   ============================================================ */
+
+$("#analyzeSafe")
+  .addEventListener(
+    "click",
+    async () => {
+
+      const input =
+        $("#safeInput")
+          .value
+          .trim();
+
+
+      if (!input) {
+
+        showToast(
+          "Paste something for MOVA Safe to analyze."
+        );
+
+        return;
+
+      }
+
+
+      const result =
+        analyzeRiskLocally(input);
+
+
+      $("#safeResult")
+        .classList.remove("hidden");
+
+      $("#safeResult")
+        .className =
+          `safe-result risk-${result.level}`;
+
+      $("#safeResult").innerHTML = `
+
+        <span class="eyebrow">
+          MOVA SAFE RESULT
+        </span>
+
+        <h2>
+          ${result.title}
+        </h2>
+
+        <p>
+          Risk score:
+          <strong>
+            ${result.score}/100
+          </strong>
+        </p>
+
+        <p>
+          ${result.reason}
+        </p>
+
+        <p>
+          <strong>
+            Recommendation:
+          </strong>
+          ${result.recommendation}
+        </p>
+
+      `;
+
+
+      await supabaseClient
+        .from("safe_checks")
+        .insert({
+
+          user_id:
+            currentUser.id,
+
+          check_type:
+            detectCheckType(input),
+
+          submitted_value:
+            input,
+
+          risk_level:
+            result.level,
+
+          risk_score:
+            result.score,
+
+          explanation:
+            result.reason
+
+        });
+
+    }
+  );
+
+
+function analyzeRiskLocally(text) {
 
   const lower =
     text.toLowerCase();
 
 
+  const dangerWords = [
+
+    "otp",
+    "password",
+    "send money",
+    "pay first",
+    "activation fee",
+    "claim your prize",
+    "urgent",
+    "investment",
+    "guaranteed profit",
+    "verify your account",
+    "account blocked",
+    "winner"
+
+  ];
+
+
   const matches =
-    suspiciousWords.filter(word =>
-      lower.includes(word)
+    dangerWords.filter(
+      word =>
+        lower.includes(word)
     );
 
 
-  if (matches.length >= 2) {
+  if (matches.length >= 3) {
 
-    result.innerHTML = `
+    return {
 
-      <div style="
-        margin-top:15px;
-        padding:15px;
-        border:1px solid rgba(255,100,100,.25);
-        border-radius:12px;
-        background:rgba(255,100,100,.05);
-      ">
+      level: "high",
 
-        <strong style="color:#ff8888">
-          🔴 HIGH RISK
-        </strong>
+      score: 90,
 
-        <p style="
-          color:#aaa;
-          font-size:11px;
-          margin-top:7px;
-        ">
-          This message contains patterns commonly associated
-          with suspicious financial requests.
-        </p>
+      title: "HIGH RISK",
 
-        <small style="color:#718078">
-          Do not send money, passwords or OTPs until independently verified.
-        </small>
+      reason:
+        `MOVA detected several warning patterns: ${matches.join(", ")}.`,
 
-      </div>
+      recommendation:
+        "Do not send money, passwords, OTPs or sensitive information until the sender has been independently verified."
 
-    `;
-
-  } else {
-
-    result.innerHTML = `
-
-      <div style="
-        margin-top:15px;
-        padding:15px;
-        border:1px solid rgba(101,230,162,.2);
-        border-radius:12px;
-      ">
-
-        <strong style="color:#65e6a2">
-          🟡 REVIEW CAREFULLY
-        </strong>
-
-        <p style="
-          color:#aaa;
-          font-size:11px;
-          margin-top:7px;
-        ">
-          MOVA did not detect strong risk patterns,
-          but this does not guarantee that the person or business is legitimate.
-        </p>
-
-      </div>
-
-    `;
+    };
 
   }
 
-}
+
+  if (matches.length >= 1) {
+
+    return {
+
+      level: "medium",
+
+      score: 60,
+
+      title: "BE CAREFUL",
+
+      reason:
+        `MOVA detected a potential warning pattern: ${matches.join(", ")}.`,
+
+      recommendation:
+        "Verify the person or business independently before paying or sharing information."
+
+    };
+
+  }
 
 
-/* =====================================================
-   NAVIGATION
-===================================================== */
+  return {
 
-function openSection(section) {
+    level: "low",
 
-  document
-    .querySelectorAll(".app-section")
-    .forEach(el =>
-      el.classList.remove("active-section")
-    );
+    score: 20,
 
+    title: "LOW SIGNAL RISK",
 
-  const target =
-    document.getElementById(section);
+    reason:
+      "No obvious high-risk patterns were detected by this basic screening.",
 
-
-  if (target)
-    target.classList.add("active-section");
-
-
-  document
-    .querySelectorAll(".nav-item")
-    .forEach(el =>
-      el.classList.remove("active")
-    );
-
-
-  event?.currentTarget?.classList.add("active");
-
-
-  const titles = {
-
-    dashboard: "Good afternoon.",
-
-    intelligence: "Your financial intelligence.",
-
-    safe: "Protect your money.",
-
-    price: "Know what things should cost.",
-
-    goals: "Give your money a destination.",
-
-    coach: "Let's talk about your money.",
-
-    profile: "Your MOVA account."
+    recommendation:
+      "This is not a guarantee that the transaction is safe. Verify important payments independently."
 
   };
 
-
-  document.getElementById("pageTitle")
-    .textContent =
-    titles[section] || "MOVA";
+}
 
 
-  if (window.innerWidth < 900)
-    toggleSidebar(false);
+function detectCheckType(value) {
+
+  if (
+    value.includes("http://") ||
+    value.includes("https://")
+  )
+    return "website";
+
+  if (
+    /^\+?[0-9\s-]{7,}$/.test(value)
+  )
+    return "phone";
+
+  return "message";
 
 }
 
 
-function toggleSidebar(force) {
+/* ============================================================
+   PRICE SEARCH
+   ============================================================ */
 
-  const sidebar =
-    document.querySelector(".sidebar");
+$("#searchPrice")
+  .addEventListener(
+    "click",
+    searchPrices
+  );
 
 
-  if (force === false) {
+async function searchPrices() {
 
-    sidebar.classList.remove("open");
+  const query =
+    $("#priceSearch")
+      .value
+      .trim();
+
+
+  if (!query) {
+
+    showToast(
+      "Enter a product name."
+    );
 
     return;
 
   }
 
 
-  sidebar.classList.toggle("open");
-
-}
-
-
-/* =====================================================
-   MODALS
-===================================================== */
-
-function openTransactionModal() {
-
-  document
-    .getElementById("transactionModal")
-    .classList.remove("hidden");
-
-  setTodayDate();
-
-}
-
-
-function closeTransactionModal() {
-
-  document
-    .getElementById("transactionModal")
-    .classList.add("hidden");
-
-  document
-    .getElementById("transactionForm")
-    .reset();
-
-  setTodayDate();
-
-}
+  const {
+    data,
+    error
+  } =
+    await supabaseClient
+      .from("price_reports")
+      .select("*")
+      .ilike(
+        "product_name",
+        `%${query}%`
+      )
+      .order(
+        "reported_at",
+        {
+          ascending: false
+        }
+      )
+      .limit(30);
 
 
-function openGoalModal() {
+  if (error) {
 
-  document
-    .getElementById("goalModal")
-    .classList.remove("hidden");
+    showToast(
+      error.message
+    );
 
-}
-
-
-function closeGoalModal() {
-
-  document
-    .getElementById("goalModal")
-    .classList.add("hidden");
-
-  document
-    .getElementById("goalForm")
-    .reset();
-
-}
-
-
-/* =====================================================
-   LOGOUT
-===================================================== */
-
-async function logout() {
-
-  await supabaseClient.auth.signOut();
-
-  currentUser = null;
-
-  appScreen.classList.add("hidden");
-
-  authScreen.classList.remove("hidden");
-
-  showLogin();
-
-}
-
-
-/* =====================================================
-   DATE
-===================================================== */
-
-function setCurrentDate() {
-
-  const now = new Date();
-
-  document.getElementById("currentDate")
-    .textContent =
-    now.toLocaleDateString(
-      undefined,
-      {
-        weekday: "long",
-        month: "long",
-        day: "numeric"
-      }
-    ).toUpperCase();
-
-}
-
-
-function setTodayDate() {
-
-  const input =
-    document.getElementById("transactionDate");
-
-  if (!input)
     return;
 
-
-  const now = new Date();
-
-  const year =
-    now.getFullYear();
-
-  const month =
-    String(now.getMonth() + 1)
-      .padStart(2, "0");
-
-  const day =
-    String(now.getDate())
-      .padStart(2, "0");
+  }
 
 
-  input.value =
-    `${year}-${month}-${day}`;
+  const container =
+    $("#priceResults");
+
+
+  if (!data?.length) {
+
+    container.innerHTML = `
+      <div class="empty-state">
+        <span>◇</span>
+        <strong>No price reports yet</strong>
+        <p>
+          MOVA Price does not have enough community data for this product yet.
+        </p>
+      </div>
+    `;
+
+    return;
+
+  }
+
+
+  container.innerHTML =
+    data.map(item => `
+
+      <div class="price-item">
+
+        <div>
+
+          <strong>
+            ${escapeHTML(
+              item.product_name
+            )}
+          </strong>
+
+          <small>
+            ${escapeHTML(
+              item.merchant_name ||
+              "Merchant not specified"
+            )}
+            ${item.location
+              ? " · " +
+                escapeHTML(item.location)
+              : ""}
+          </small>
+
+        </div>
+
+        <div class="price-value">
+          ${escapeHTML(
+            item.currency || "USD"
+          )}
+          ${Number(item.price).toFixed(2)}
+        </div>
+
+      </div>
+
+    `).join("");
 
 }
 
 
-/* =====================================================
-   HELPERS
-===================================================== */
+/* ============================================================
+   AI COACH
+   ============================================================ */
 
-function money(value) {
+$("#askCoach")
+  .addEventListener(
+    "click",
+    askCoach
+  );
 
-  const currency =
-    window.financialProfile?.currency || "USD";
+
+async function askCoach() {
+
+  const question =
+    $("#coachQuestion")
+      .value
+      .trim()
+      .toLowerCase();
+
+
+  if (!question) {
+
+    showToast(
+      "Ask MOVA a question."
+    );
+
+    return;
+
+  }
+
+
+  const income =
+    transactions
+      .filter(
+        t =>
+          t.transaction_type ===
+          "income"
+      )
+      .reduce(
+        (sum,t) =>
+          sum +
+          Number(t.amount),
+        0
+      );
+
+
+  const expenses =
+    transactions
+      .filter(
+        t =>
+          t.transaction_type ===
+          "expense"
+      )
+      .reduce(
+        (sum,t) =>
+          sum +
+          Number(t.amount),
+        0
+      );
+
+
+  let answer =
+    "Keep recording your financial activity and MOVA will become better at understanding your financial position.";
+
+
+  if (
+    question.includes("spend") ||
+    question.includes("spending")
+  ) {
+
+    answer =
+      `You've recorded ${formatMoney(expenses)} in expenses and ${formatMoney(income)} in income. Focus first on your largest spending categories before trying to optimize small expenses.`;
+
+  }
+
+
+  else if (
+    question.includes("save") ||
+    question.includes("saving")
+  ) {
+
+    answer =
+      "A strong starting principle is to give savings a purpose. Create a MOVA goal and decide what amount you can consistently move toward it.";
+
+  }
+
+
+  else if (
+    question.includes("budget")
+  ) {
+
+    answer =
+      "Start with your recorded income, essential expenses and upcoming obligations. Your safe-to-spend amount should be based on what remains after those obligations.";
+
+  }
+
+
+  else if (
+    question.includes("debt")
+  ) {
+
+    answer =
+      "List every debt in MOVA with its balance, interest and payment amount. Prioritize expensive debt while maintaining enough cash for essential obligations.";
+
+  }
+
+
+  $("#coachAnswer")
+    .textContent =
+      answer;
+
+
+  await supabaseClient
+    .from("ai_insights")
+    .insert({
+
+      user_id:
+        currentUser.id,
+
+      insight_type:
+        "coach_question",
+
+      title:
+        "MOVA Coach",
+
+      message:
+        answer,
+
+      priority:
+        "normal"
+
+    });
+
+}
+
+
+/* ============================================================
+   PROFILE
+   ============================================================ */
+
+function updateProfile() {
+
+  const metadata =
+    currentUser.user_metadata || {};
+
+
+  const name =
+    currentProfile?.full_name ||
+    metadata.full_name ||
+    "MOVA User";
+
+
+  $("#userFirstName")
+    .textContent =
+      name
+        ? " " +
+          name.split(" ")[0]
+        : "";
+
+
+  $("#profileName")
+    .textContent =
+      name;
+
+
+  $("#profileEmail")
+    .textContent =
+      currentUser.email ||
+      "—";
+
+
+  const plan =
+    currentProfile?.subscription_plan ||
+    "free";
+
+
+  const status =
+    currentProfile?.subscription_status ||
+    "trial";
+
+
+  if (
+    plan === "pro"
+  ) {
+
+    $("#membershipTitle")
+      .textContent =
+        "MOVA Pro";
+
+  } else {
+
+    $("#membershipTitle")
+      .textContent =
+        "MOVA Free";
+
+  }
+
+
+  $("#membershipText")
+    .textContent =
+      status === "trial"
+        ? "Your 7-day MOVA Pro trial is active."
+        : "Your current MOVA plan is active.";
+
+
+  updateTrialCountdown();
+
+}
+
+
+/* ============================================================
+   TRIAL COUNTDOWN
+   ============================================================ */
+
+function updateTrialCountdown() {
+
+  if (
+    !currentProfile?.trial_ends_at
+  ) {
+
+    $("#trialCountdown")
+      .textContent =
+        "";
+
+    return;
+
+  }
+
+
+  const end =
+    new Date(
+      currentProfile.trial_ends_at
+    );
+
+
+  const now =
+    new Date();
+
+
+  const difference =
+    end - now;
+
+
+  if (difference <= 0) {
+
+    $("#trialCountdown")
+      .textContent =
+        "Your trial has ended. Choose your MOVA plan.";
+
+    return;
+
+  }
+
+
+  const days =
+    Math.floor(
+      difference /
+      (1000 * 60 * 60 * 24)
+    );
+
+
+  const hours =
+    Math.floor(
+      (
+        difference %
+        (1000 * 60 * 60 * 24)
+      ) /
+      (1000 * 60 * 60)
+    );
+
+
+  $("#trialCountdown")
+    .textContent =
+      `Pro trial: ${days} day${days === 1 ? "" : "s"} ${hours}h remaining`;
+
+}
+
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+
+$$(".nav-item").forEach(button => {
+
+  button.addEventListener(
+    "click",
+    () => {
+
+      const page =
+        button.dataset.page;
+
+
+      $$(".nav-item")
+        .forEach(item =>
+          item.classList.remove("active")
+        );
+
+
+      button.classList.add("active");
+
+
+      $$(".page")
+        .forEach(item =>
+          item.classList.remove("active-page")
+        );
+
+
+      const target =
+        document.getElementById(
+          `page-${page}`
+        );
+
+
+      if (target)
+        target.classList.add(
+          "active-page"
+        );
+
+
+      $("#sidebar")
+        .classList.remove("open");
+
+    }
+  );
+
+});
+
+
+/* ============================================================
+   MOBILE MENU
+   ============================================================ */
+
+$("#menuButton")
+  .addEventListener(
+    "click",
+    () => {
+
+      $("#sidebar")
+        .classList.toggle("open");
+
+    }
+  );
+
+
+/* ============================================================
+   MODALS
+   ============================================================ */
+
+function openModal(id) {
+
+  document
+    .getElementById(id)
+    .classList.remove("hidden");
+
+}
+
+
+function closeModal(id) {
+
+  document
+    .getElementById(id)
+    .classList.add("hidden");
+
+}
+
+
+$$("[data-close]").forEach(button => {
+
+  button.addEventListener(
+    "click",
+    () => {
+
+      closeModal(
+        button.dataset.close
+      );
+
+    }
+  );
+
+});
+
+
+$("#addTransactionButton")
+  .addEventListener(
+    "click",
+    () =>
+      openModal("transactionModal")
+  );
+
+
+$("#addTransactionButton2")
+  .addEventListener(
+    "click",
+    () =>
+      openModal("transactionModal")
+  );
+
+
+$("#addGoalButton")
+  .addEventListener(
+    "click",
+    () =>
+      openModal("goalModal")
+  );
+
+
+$("#createGoalButton")
+  .addEventListener(
+    "click",
+    () =>
+      openModal("goalModal")
+  );
+
+
+/* ============================================================
+   SIGN OUT
+   ============================================================ */
+
+$("#signOutButton")
+  .addEventListener(
+    "click",
+    async () => {
+
+      await supabaseClient.auth.signOut();
+
+      currentUser = null;
+
+      currentProfile = null;
+
+      showAuthScreen();
+
+    }
+  );
+
+
+/* ============================================================
+   SHOW AUTH
+   ============================================================ */
+
+function showAuthScreen() {
+
+  $("#appScreen")
+    .classList.add("hidden");
+
+  $("#authScreen")
+    .classList.remove("hidden");
+
+  switchToLogin();
+
+}
+
+
+/* ============================================================
+   FORMAT MONEY
+   ============================================================ */
+
+function formatMoney(amount) {
+
+  const number =
+    Number(amount || 0);
 
 
   return new Intl.NumberFormat(
     "en-US",
     {
       style: "currency",
-      currency
+      currency: "USD",
+      maximumFractionDigits: 2
     }
-  ).format(value);
+  ).format(number);
 
 }
 
 
-function showMessage(message, error = false) {
-
-  authMessage.textContent =
-    message;
-
-  authMessage.style.color =
-    error
-      ? "#ff8888"
-      : "var(--green)";
-
-}
-
+/* ============================================================
+   ESCAPE HTML
+   ============================================================ */
 
 function escapeHTML(value) {
 
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
+  return String(value ?? "")
+    .replace(
+      /[&<>"']/g,
+      character => {
+
+        const map = {
+
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#039;"
+
+        };
+
+        return map[character];
+
+      }
+    );
 
 }
 
 
-/* =====================================================
-   AUTH STATE LISTENER
-===================================================== */
+/* ============================================================
+   TOAST
+   ============================================================ */
 
-supabaseClient.auth.onAuthStateChange(
-  async (event, session) => {
+function showToast(message) {
 
-    if (
-      event === "SIGNED_IN" &&
-      session
-    ) {
+  const toast =
+    $("#toast");
+
+  toast.textContent =
+    message;
+
+  toast.classList.add("show");
+
+
+  setTimeout(
+    () =>
+      toast.classList.remove("show"),
+    3000
+  );
+
+}
+
+
+/* ============================================================
+   INITIALIZE DATE
+   ============================================================ */
+
+$("#transactionDate")
+  .value =
+    new Date()
+      .toISOString()
+      .split("T")[0];
+
+
+/* ============================================================
+   INITIAL SESSION CHECK
+   ============================================================ */
+
+(async function init() {
+
+  try {
+
+    const {
+      data
+    } =
+      await supabaseClient
+        .auth
+        .getSession();
+
+
+    if (data.session?.user) {
 
       currentUser =
-        session.user;
+        data.session.user;
 
-      await showApp();
+      await loadApplication();
 
-    }
+    } else {
 
-
-    if (event === "SIGNED_OUT") {
-
-      currentUser = null;
-
-      showAuth();
+      showAuthScreen();
 
     }
+
+  } catch (error) {
+
+    console.error(
+      "MOVA initialization error:",
+      error
+    );
 
   }
-);
+
+})();
