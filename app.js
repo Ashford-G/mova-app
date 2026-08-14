@@ -16,7 +16,7 @@
 ===================================================== */
 
 const SUPABASE_URL =
-  "PASTE_YOUR_SUPABASE_URL_HERE";
+  " https://nqcxolvcakmmpcdxqpb.supabase.co ";
 
 const SUPABASE_KEY =
   "PASTE_YOUR_SUPABASE_PUBLISHABLE_KEY_HERE";
