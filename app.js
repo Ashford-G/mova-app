@@ -33,7 +33,24 @@ const supabaseClient =
     SUPABASE_PUBLISHABLE_KEY
   );
 
+console.log("MOVA SUPABASE URL:", SUPABASE_URL);
 
+fetch(SUPABASE_URL + "/rest/v1/", {
+    headers: {
+        apikey: SUPABASE_PUBLISHABLE_KEY,
+        Authorization: "Bearer " + SUPABASE_PUBLISHABLE_KEY
+    }
+})
+.then(response => {
+    console.log("SUPABASE HTTP STATUS:", response.status);
+    return response.text();
+})
+.then(data => {
+    console.log("SUPABASE RESPONSE:", data);
+})
+.catch(error => {
+    console.error("SUPABASE DIRECT FETCH ERROR:", error);
+});
 /* ============================================================
    GLOBAL STATE
    ============================================================ */
