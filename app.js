@@ -2277,3 +2277,193 @@ $("#transactionDate")
   }
 
 })();
+
+
+/* ============================================================
+   TRANSACTION HISTORY
+   ============================================================ */
+
+let transactionHistoryFilter = "all";
+
+
+function renderTransactionHistory() {
+
+  const container =
+    $("#transactionHistoryList");
+
+  if (!container) return;
+
+
+  let filtered =
+    transactions;
+
+
+  if (
+    transactionHistoryFilter !== "all"
+  ) {
+
+    filtered =
+      transactions.filter(
+        transaction =>
+          transaction.transaction_type ===
+          transactionHistoryFilter
+      );
+
+  }
+
+
+  let income = 0;
+  let expenses = 0;
+
+
+  transactions.forEach(transaction => {
+
+    const amount =
+      Number(transaction.amount) || 0;
+
+    if (
+      transaction.transaction_type ===
+      "income"
+    ) {
+
+      income += amount;
+
+    } else if (
+      transaction.transaction_type ===
+      "expense"
+    ) {
+
+      expenses += amount;
+
+    }
+
+  });
+
+
+  const net =
+    income - expenses;
+
+
+  const incomeElement =
+    $("#historyIncome");
+
+  const expensesElement =
+    $("#historyExpenses");
+
+  const netElement =
+    $("#historyNet");
+
+
+  if (incomeElement) {
+
+    incomeElement.textContent =
+      formatMoney(income);
+
+  }
+
+
+  if (expensesElement) {
+
+    expensesElement.textContent =
+      formatMoney(expenses);
+
+  }
+
+
+  if (netElement) {
+
+    netElement.textContent =
+      formatMoney(net);
+
+  }
+
+
+  if (!filtered.length) {
+
+    container.innerHTML = `
+      <div class="empty-state">
+        <h3>No transactions yet</h3>
+        <p>
+          Your income and expenses will appear here.
+        </p>
+      </div>
+    `;
+
+    return;
+
+  }
+
+
+  container.innerHTML =
+    filtered.map(transaction => {
+
+      const amount =
+        Number(transaction.amount) || 0;
+
+      const isIncome =
+        transaction.transaction_type ===
+        "income";
+
+      const sign =
+        isIncome ? "+" : "-";
+
+      const date =
+        transaction.transaction_date
+          ? new Date(
+              transaction.transaction_date
+            ).toLocaleDateString()
+          : "";
+
+
+      return `
+
+        <div class="transaction-history-item">
+
+          <div class="transaction-history-icon">
+
+            ${isIncome ? "↑" : "↓"}
+
+          </div>
+
+
+          <div class="transaction-history-info">
+
+            <strong>
+              ${escapeHTML(
+                transaction.category ||
+                "Uncategorized"
+              )}
+            </strong>
+
+            <span>
+              ${escapeHTML(
+                transaction.description ||
+                (isIncome
+                  ? "Income"
+                  : "Expense")
+              )}
+            </span>
+
+            <small>
+              ${date}
+            </small>
+
+          </div>
+
+
+          <div
+            class="transaction-history-amount
+            ${isIncome ? "income" : "expense"}"
+          >
+
+            ${sign}${formatMoney(amount)}
+
+          </div>
+
+        </div>
+
+      `;
+
+    }).join("");
+
+}
