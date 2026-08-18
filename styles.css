@@ -1765,3 +1765,451 @@ button {
     font-size: 38px;
   }
 }
+
+
+/* ============================================================
+   MOVA — TRANSACTION HISTORY UPGRADE
+   ============================================================ */
+
+.transaction-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin: 28px 0 22px;
+}
+
+.summary-card {
+  position: relative;
+  padding: 22px;
+  border: 1px solid rgba(126, 241, 187, 0.12);
+  border-radius: 20px;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(20, 43, 34, 0.72),
+      rgba(7, 17, 13, 0.9)
+    );
+  box-shadow:
+    0 15px 40px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+}
+
+.summary-card::after {
+  content: "";
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  right: -40px;
+  top: -45px;
+  border-radius: 50%;
+  background: rgba(95, 236, 174, 0.08);
+  filter: blur(10px);
+}
+
+.summary-card span {
+  display: block;
+  margin-bottom: 9px;
+  color: #899991;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.summary-card strong {
+  display: block;
+  color: #f1f7f4;
+  font-family: "Manrope", sans-serif;
+  font-size: 25px;
+  font-weight: 800;
+}
+
+.summary-card:nth-child(1) strong {
+  color: #78edb9;
+}
+
+.summary-card:nth-child(2) strong {
+  color: #ff8d98;
+}
+
+.summary-card:nth-child(3) strong {
+  color: #f3f7f5;
+}
+
+
+/* ============================================================
+   TRANSACTION FILTERS
+   ============================================================ */
+
+.transaction-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 18px;
+  padding: 6px;
+  width: fit-content;
+  border: 1px solid rgba(126, 241, 187, 0.1);
+  border-radius: 14px;
+  background: rgba(11, 25, 20, 0.72);
+}
+
+.transaction-filter {
+  appearance: none;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 10px 17px;
+  background: transparent;
+  color: #87948e;
+  font-family: "DM Sans", sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.transaction-filter:hover {
+  color: #dce9e3;
+  background: rgba(126, 241, 187, 0.06);
+}
+
+.transaction-filter.active {
+  color: #06110c;
+  background: #70e8b2;
+  box-shadow: 0 5px 18px rgba(112, 232, 178, 0.18);
+}
+
+
+/* ============================================================
+   TRANSACTION HISTORY CONTAINER
+   ============================================================ */
+
+.transaction-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+
+/* ============================================================
+   INDIVIDUAL TRANSACTION
+   ============================================================ */
+
+.transaction-history-item {
+  display: grid;
+  grid-template-columns: 48px 1fr auto;
+  align-items: center;
+  gap: 15px;
+
+  min-height: 78px;
+  padding: 14px 18px;
+
+  border: 1px solid rgba(126, 241, 187, 0.08);
+  border-radius: 18px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(17, 34, 27, 0.82),
+      rgba(7, 17, 13, 0.92)
+    );
+
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.transaction-history-item:hover {
+  transform: translateY(-2px);
+  border-color: rgba(126, 241, 187, 0.22);
+  background:
+    linear-gradient(
+      145deg,
+      rgba(20, 42, 33, 0.9),
+      rgba(7, 17, 13, 0.95)
+    );
+}
+
+
+/* ============================================================
+   INCOME / EXPENSE ICON
+   ============================================================ */
+
+.transaction-history-icon {
+  width: 46px;
+  height: 46px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 14px;
+
+  background: rgba(112, 232, 178, 0.08);
+  border: 1px solid rgba(112, 232, 178, 0.1);
+
+  color: #70e8b2;
+
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.transaction-history-item:has(
+  .transaction-history-amount.expense
+) .transaction-history-icon {
+  color: #ff8793;
+  background: rgba(255, 135, 147, 0.08);
+  border-color: rgba(255, 135, 147, 0.12);
+}
+
+
+/* ============================================================
+   TRANSACTION INFORMATION
+   ============================================================ */
+
+.transaction-history-info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.transaction-history-info strong {
+  color: #edf5f1;
+  font-family: "Manrope", sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.transaction-history-info span {
+  color: #929f99;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.transaction-history-info small {
+  color: #58665f;
+  font-size: 11px;
+}
+
+
+/* ============================================================
+   TRANSACTION AMOUNT
+   ============================================================ */
+
+.transaction-history-amount {
+  text-align: right;
+  white-space: nowrap;
+
+  font-family: "Manrope", sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.transaction-history-amount.income {
+  color: #70e8b2;
+}
+
+.transaction-history-amount.expense {
+  color: #ff8793;
+}
+
+
+/* ============================================================
+   EMPTY HISTORY
+   ============================================================ */
+
+.transaction-history-list .empty-state {
+  padding: 55px 25px;
+  text-align: center;
+
+  border: 1px dashed rgba(126, 241, 187, 0.13);
+  border-radius: 20px;
+
+  background: rgba(8, 20, 15, 0.55);
+}
+
+.transaction-history-list .empty-state h3 {
+  margin: 10px 0 5px;
+  color: #e7f0eb;
+}
+
+.transaction-history-list .empty-state p {
+  margin: 0;
+  color: #75827c;
+}
+
+
+/* ============================================================
+   ADD TRANSACTION BUTTON
+   ============================================================ */
+
+#historyAddTransaction {
+  min-width: 175px;
+}
+
+
+/* ============================================================
+   TOPBAR MOVA INTELLIGENCE BUTTON
+   ============================================================ */
+
+#notificationButton {
+  position: relative;
+
+  width: 54px;
+  height: 54px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: 1px solid rgba(126, 241, 187, 0.13);
+  border-radius: 17px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(20, 42, 33, 0.85),
+      rgba(7, 17, 13, 0.9)
+    );
+
+  color: #7de9b5;
+
+  font-size: 24px;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+#notificationButton:hover {
+  transform: translateY(-2px);
+
+  border-color: rgba(126, 241, 187, 0.3);
+
+  box-shadow:
+    0 8px 25px rgba(74, 226, 163, 0.12);
+}
+
+#notificationButton:active {
+  transform: scale(0.95);
+}
+
+
+/* Small glowing indicator */
+#notificationButton::after {
+  content: "";
+
+  position: absolute;
+
+  width: 7px;
+  height: 7px;
+
+  top: 9px;
+  right: 9px;
+
+  border-radius: 50%;
+
+  background: #70e8b2;
+
+  box-shadow:
+    0 0 10px rgba(112, 232, 178, 0.8);
+}
+
+
+/* ============================================================
+   MOBILE TRANSACTION HISTORY
+   ============================================================ */
+
+@media (max-width: 700px) {
+
+  .transaction-summary {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-top: 22px;
+  }
+
+  .summary-card {
+    padding: 17px 18px;
+    border-radius: 17px;
+  }
+
+  .summary-card strong {
+    font-size: 22px;
+  }
+
+  .transaction-filters {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .transaction-filter {
+    flex: 1;
+    padding: 10px 8px;
+    font-size: 13px;
+  }
+
+  .transaction-history-item {
+    grid-template-columns: 42px 1fr auto;
+    gap: 11px;
+
+    min-height: 70px;
+
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .transaction-history-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    font-size: 19px;
+  }
+
+  .transaction-history-info strong {
+    font-size: 14px;
+  }
+
+  .transaction-history-info span {
+    font-size: 12px;
+  }
+
+  .transaction-history-amount {
+    font-size: 14px;
+  }
+
+  #historyAddTransaction {
+    width: 100%;
+  }
+
+}
+
+
+/* ============================================================
+   VERY SMALL PHONES
+   ============================================================ */
+
+@media (max-width: 420px) {
+
+  .transaction-history-item {
+    grid-template-columns: 38px minmax(0, 1fr);
+  }
+
+  .transaction-history-amount {
+    grid-column: 2;
+    text-align: left;
+    margin-top: -5px;
+  }
+
+  .transaction-history-icon {
+    width: 38px;
+    height: 38px;
+  }
+
+}
