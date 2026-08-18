@@ -1,6 +1,6 @@
 /* ============================================================
    MOVA V4
-   Money Operating System
+   MONEY OPERATING SYSTEM
    ============================================================ */
 
 
@@ -14,18 +14,13 @@ const SUPABASE_URL =
 const SUPABASE_PUBLISHABLE_KEY =
   "sb_publishable_DD6vSjZ0HLFggyg-ttpMkQ_DWGpaUdh";
 
-
 const supabaseClient =
   window.supabase.createClient(
     SUPABASE_URL,
     SUPABASE_PUBLISHABLE_KEY
   );
 
-
-console.log(
-  "MOVA SUPABASE URL:",
-  SUPABASE_URL
-);
+console.log("MOVA SUPABASE URL:", SUPABASE_URL);
 
 
 /* ============================================================
@@ -47,11 +42,26 @@ let transactionHistoryFilter = "all";
    DOM HELPERS
    ============================================================ */
 
-const $ = (selector) =>
+const $ = selector =>
   document.querySelector(selector);
 
-const $$ = (selector) =>
+const $$ = selector =>
   document.querySelectorAll(selector);
+
+
+/* ============================================================
+   SAFE EVENT LISTENER
+   ============================================================ */
+
+function on(id, event, callback) {
+
+  const element = document.getElementById(id);
+
+  if (element) {
+    element.addEventListener(event, callback);
+  }
+
+}
 
 
 /* ============================================================
@@ -65,51 +75,66 @@ function showAuthMessage(message, type = "") {
   if (!box) return;
 
   box.textContent = message;
+  box.className = `message ${type}`;
 
-  box.className =
-    `message ${type}`;
 }
 
 
 function switchToSignup() {
 
-  $("#loginForm").classList.add("hidden");
-  $("#signupForm").classList.remove("hidden");
+  if ($("#loginForm"))
+    $("#loginForm").classList.add("hidden");
 
-  $("#authTitle").textContent =
-    "Build your financial command center.";
+  if ($("#signupForm"))
+    $("#signupForm").classList.remove("hidden");
 
-  $("#authSubtitle").textContent =
-    "Create your MOVA account and start your 7-day Pro experience.";
+  if ($("#authTitle"))
+    $("#authTitle").textContent =
+      "Build your financial command center.";
 
-  $("#switchText").textContent =
-    "Already have an account?";
+  if ($("#authSubtitle"))
+    $("#authSubtitle").textContent =
+      "Create your MOVA account and start your 7-day Pro experience.";
 
-  $("#switchAuth").textContent =
-    "Sign in";
+  if ($("#switchText"))
+    $("#switchText").textContent =
+      "Already have an account?";
+
+  if ($("#switchAuth"))
+    $("#switchAuth").textContent =
+      "Sign in";
 
   showAuthMessage("");
+
 }
 
 
 function switchToLogin() {
 
-  $("#signupForm").classList.add("hidden");
-  $("#loginForm").classList.remove("hidden");
+  if ($("#signupForm"))
+    $("#signupForm").classList.add("hidden");
 
-  $("#authTitle").textContent =
-    "Welcome back.";
+  if ($("#loginForm"))
+    $("#loginForm").classList.remove("hidden");
 
-  $("#authSubtitle").textContent =
-    "Understand your money. Protect your money. Make better decisions.";
+  if ($("#authTitle"))
+    $("#authTitle").textContent =
+      "Welcome back.";
 
-  $("#switchText").textContent =
-    "Don't have an account?";
+  if ($("#authSubtitle"))
+    $("#authSubtitle").textContent =
+      "Understand your money. Protect your money. Make better decisions.";
 
-  $("#switchAuth").textContent =
-    "Create account";
+  if ($("#switchText"))
+    $("#switchText").textContent =
+      "Don't have an account?";
+
+  if ($("#switchAuth"))
+    $("#switchAuth").textContent =
+      "Create account";
 
   showAuthMessage("");
+
 }
 
 
@@ -117,24 +142,22 @@ function switchToLogin() {
    AUTH SWITCH
    ============================================================ */
 
-$("#switchAuth").addEventListener(
-  "click",
-  () => {
+on("switchAuth", "click", () => {
 
-    if (
-      $("#signupForm").classList.contains("hidden")
-    ) {
+  if (
+    $("#signupForm") &&
+    $("#signupForm").classList.contains("hidden")
+  ) {
 
-      switchToSignup();
+    switchToSignup();
 
-    } else {
+  } else {
 
-      switchToLogin();
-
-    }
+    switchToLogin();
 
   }
-);
+
+});
 
 
 /* ============================================================
@@ -143,21 +166,18 @@ $("#switchAuth").addEventListener(
 
 $$(".plan-card").forEach(card => {
 
-  card.addEventListener(
-    "click",
-    () => {
+  card.addEventListener("click", () => {
 
-      $$(".plan-card").forEach(c =>
-        c.classList.remove("selected")
-      );
+    $$(".plan-card").forEach(c =>
+      c.classList.remove("selected")
+    );
 
-      card.classList.add("selected");
+    card.classList.add("selected");
 
-      selectedPlan =
-        card.dataset.plan;
+    selectedPlan =
+      card.dataset.plan;
 
-    }
-  );
+  });
 
 });
 
@@ -168,29 +188,21 @@ $$(".plan-card").forEach(card => {
 
 $$(".password-toggle").forEach(button => {
 
-  button.addEventListener(
-    "click",
-    () => {
+  button.addEventListener("click", () => {
 
-      const input =
-        document.getElementById(
-          button.dataset.target
-        );
+    const input =
+      document.getElementById(
+        button.dataset.target
+      );
 
-      if (!input) return;
+    if (!input) return;
 
-      if (input.type === "password") {
+    input.type =
+      input.type === "password"
+        ? "text"
+        : "password";
 
-        input.type = "text";
-
-      } else {
-
-        input.type = "password";
-
-      }
-
-    }
-  );
+  });
 
 });
 
@@ -199,223 +211,209 @@ $$(".password-toggle").forEach(button => {
    SIGN UP
    ============================================================ */
 
-$("#signupForm").addEventListener(
-  "submit",
-  async (event) => {
+on("signupForm", "submit", async event => {
 
-    event.preventDefault();
+  event.preventDefault();
+
+  showAuthMessage(
+    "Creating your MOVA account..."
+  );
+
+  const name =
+    $("#signupName").value.trim();
+
+  const email =
+    $("#signupEmail").value.trim();
+
+  const password =
+    $("#signupPassword").value;
+
+  if (password.length < 8) {
 
     showAuthMessage(
-      "Creating your MOVA account..."
+      "Password must contain at least 8 characters.",
+      "error"
     );
 
-    const name =
-      $("#signupName").value.trim();
-
-    const email =
-      $("#signupEmail").value.trim();
-
-    const password =
-      $("#signupPassword").value;
-
-    if (password.length < 8) {
-
-      showAuthMessage(
-        "Password must contain at least 8 characters.",
-        "error"
-      );
-
-      return;
-    }
-
-
-    try {
-
-      const {
-        data,
-        error
-      } =
-        await supabaseClient.auth.signUp({
-
-          email,
-
-          password,
-
-          options: {
-
-            data: {
-
-              full_name: name,
-
-              selected_plan:
-                selectedPlan
-
-            },
-
-            emailRedirectTo:
-              window.location.origin
-
-          }
-
-        });
-
-
-      if (error)
-        throw error;
-
-
-      if (data.session) {
-
-        showAuthMessage(
-          "Account created. Welcome to MOVA.",
-          "success"
-        );
-
-        await loadApplication();
-
-      } else {
-
-        showAuthMessage(
-          "Account created. Check your email to confirm your account.",
-          "success"
-        );
-
-      }
-
-    } catch (error) {
-
-      console.error(error);
-
-      showAuthMessage(
-        error.message ||
-        "Unable to create your account.",
-        "error"
-      );
-
-    }
+    return;
 
   }
-);
+
+  try {
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient.auth.signUp({
+
+        email,
+
+        password,
+
+        options: {
+
+          data: {
+
+            full_name: name,
+
+            selected_plan:
+              selectedPlan
+
+          },
+
+          emailRedirectTo:
+            window.location.origin
+
+        }
+
+      });
+
+    if (error)
+      throw error;
+
+    if (data.session) {
+
+      showAuthMessage(
+        "Account created. Welcome to MOVA.",
+        "success"
+      );
+
+      currentUser = data.user;
+
+      await loadApplication();
+
+    } else {
+
+      showAuthMessage(
+        "Account created. Check your email to confirm your account.",
+        "success"
+      );
+
+    }
+
+  } catch (error) {
+
+    console.error(error);
+
+    showAuthMessage(
+      error.message ||
+      "Unable to create your account.",
+      "error"
+    );
+
+  }
+
+});
 
 
 /* ============================================================
    SIGN IN
    ============================================================ */
 
-$("#loginForm").addEventListener(
-  "submit",
-  async (event) => {
+on("loginForm", "submit", async event => {
 
-    event.preventDefault();
+  event.preventDefault();
+
+  showAuthMessage(
+    "Signing you in..."
+  );
+
+  const email =
+    $("#loginEmail").value.trim();
+
+  const password =
+    $("#loginPassword").value;
+
+  try {
+
+    const {
+      data,
+      error
+    } =
+      await supabaseClient.auth.signInWithPassword({
+
+        email,
+
+        password
+
+      });
+
+    if (error)
+      throw error;
+
+    currentUser =
+      data.user;
+
+    await loadApplication();
+
+  } catch (error) {
+
+    console.error(error);
 
     showAuthMessage(
-      "Signing you in..."
+      error.message ||
+      "Unable to sign in.",
+      "error"
     );
 
-    const email =
-      $("#loginEmail").value.trim();
-
-    const password =
-      $("#loginPassword").value;
-
-
-    try {
-
-      const {
-        data,
-        error
-      } =
-        await supabaseClient.auth.signInWithPassword({
-
-          email,
-
-          password
-
-        });
-
-
-      if (error)
-        throw error;
-
-
-      currentUser =
-        data.user;
-
-      await loadApplication();
-
-    } catch (error) {
-
-      console.error(error);
-
-      showAuthMessage(
-        error.message ||
-        "Unable to sign in.",
-        "error"
-      );
-
-    }
-
   }
-);
+
+});
 
 
 /* ============================================================
    FORGOT PASSWORD
    ============================================================ */
 
-$("#forgotPassword").addEventListener(
-  "click",
-  async () => {
+on("forgotPassword", "click", async () => {
 
-    const email =
-      $("#loginEmail").value.trim();
+  const email =
+    $("#loginEmail").value.trim();
 
-    if (!email) {
+  if (!email) {
 
-      showAuthMessage(
-        "Enter your email address first.",
-        "error"
-      );
+    showAuthMessage(
+      "Enter your email address first.",
+      "error"
+    );
 
-      return;
-    }
-
-
-    try {
-
-      const {
-        error
-      } =
-        await supabaseClient.auth
-          .resetPasswordForEmail(
-            email,
-            {
-              redirectTo:
-                window.location.origin
-            }
-          );
-
-
-      if (error)
-        throw error;
-
-
-      showAuthMessage(
-        "Password reset instructions sent to your email.",
-        "success"
-      );
-
-    } catch (error) {
-
-      showAuthMessage(
-        error.message,
-        "error"
-      );
-
-    }
+    return;
 
   }
-);
+
+  try {
+
+    const {
+      error
+    } =
+      await supabaseClient.auth
+        .resetPasswordForEmail(
+          email,
+          {
+            redirectTo:
+              window.location.origin
+          }
+        );
+
+    if (error)
+      throw error;
+
+    showAuthMessage(
+      "Password reset instructions sent to your email.",
+      "success"
+    );
+
+  } catch (error) {
+
+    showAuthMessage(
+      error.message,
+      "error"
+    );
+
+  }
+
+});
 
 
 /* ============================================================
@@ -451,13 +449,11 @@ async function loadApplication() {
   if (!currentUser)
     return;
 
+  if ($("#authScreen"))
+    $("#authScreen").classList.add("hidden");
 
-  $("#authScreen")
-    .classList.add("hidden");
-
-  $("#appScreen")
-    .classList.remove("hidden");
-
+  if ($("#appScreen"))
+    $("#appScreen").classList.remove("hidden");
 
   await loadProfile();
 
@@ -467,19 +463,11 @@ async function loadApplication() {
 
   await loadDebts();
 
-
   updateDashboard();
 
   updateIntelligence();
 
   updateProfile();
-
-
-  /*
-     IMPORTANT:
-     Render transaction history after transactions
-     have been loaded from Supabase.
-  */
 
   renderTransactionHistory();
 
@@ -502,18 +490,19 @@ async function loadProfile() {
       .eq("id", currentUser.id)
       .maybeSingle();
 
-
   if (error) {
 
-    console.error(error);
+    console.error(
+      "PROFILE LOAD ERROR:",
+      error
+    );
 
     return;
-  }
 
+  }
 
   currentProfile =
     data;
-
 
   if (!currentProfile) {
 
@@ -532,7 +521,6 @@ async function createProfileFallback() {
 
   const metadata =
     currentUser.user_metadata || {};
-
 
   const {
     data,
@@ -570,7 +558,6 @@ async function createProfileFallback() {
       .select()
       .single();
 
-
   if (!error)
     currentProfile = data;
 
@@ -583,6 +570,9 @@ async function createProfileFallback() {
 
 async function loadTransactions() {
 
+  if (!currentUser)
+    return;
+
   const {
     data,
     error
@@ -590,37 +580,40 @@ async function loadTransactions() {
     await supabaseClient
       .from("transactions")
       .select("*")
-      .eq("user_id", currentUser.id)
+      .eq(
+        "user_id",
+        currentUser.id
+      )
       .order(
         "transaction_date",
         {
           ascending: false
         }
+      )
+      .order(
+        "created_at",
+        {
+          ascending: false
+        }
       );
-
 
   if (error) {
 
     console.error(
-      "TRANSACTION LOAD ERROR:",
+      "TRANSACTIONS LOAD ERROR:",
       error
     );
 
     transactions = [];
 
-    return;
-  }
+    renderTransactionHistory();
 
+    return;
+
+  }
 
   transactions =
     data || [];
-
-
-  /*
-     IMPORTANT:
-     Update history whenever transactions
-     are loaded.
-  */
 
   renderTransactionHistory();
 
@@ -631,106 +624,423 @@ async function loadTransactions() {
    ADD TRANSACTION
    ============================================================ */
 
-$("#transactionForm")
-  .addEventListener(
-    "submit",
-    async event => {
+on("transactionForm", "submit", async event => {
 
-      event.preventDefault();
+  event.preventDefault();
 
+  if (!currentUser) {
 
-      const type =
-        $("#transactionType").value;
+    showToast(
+      "Please sign in first."
+    );
 
-      const amount =
-        Number(
-          $("#transactionAmount").value
-        );
+    return;
 
-      const category =
-        $("#transactionCategory").value.trim();
+  }
 
-      const description =
-        $("#transactionDescription").value.trim();
+  const type =
+    $("#transactionType").value;
 
-      const date =
-        $("#transactionDate").value;
+  const amount =
+    Number(
+      $("#transactionAmount").value
+    );
 
+  const category =
+    $("#transactionCategory")
+      .value
+      .trim();
 
-      if (!amount || amount <= 0) {
+  const description =
+    $("#transactionDescription")
+      .value
+      .trim();
 
-        showToast(
-          "Enter a valid amount."
-        );
+  const date =
+    $("#transactionDate").value;
 
-        return;
-      }
+  if (!amount || amount <= 0) {
 
+    showToast(
+      "Enter a valid amount."
+    );
 
-      const {
-        error
-      } =
-        await supabaseClient
-          .from("transactions")
-          .insert({
+    return;
 
-            user_id:
-              currentUser.id,
+  }
 
-            amount,
+  if (!category) {
 
-            transaction_type:
-              type,
+    showToast(
+      "Enter a transaction category."
+    );
 
-            category,
+    return;
 
-            description,
+  }
 
-            transaction_date:
-              date
+  try {
 
-          });
+    const {
+      error
+    } =
+      await supabaseClient
+        .from("transactions")
+        .insert({
 
+          user_id:
+            currentUser.id,
 
-      if (error) {
+          amount,
 
-        console.error(error);
+          transaction_type:
+            type,
 
-        showToast(
-          error.message
-        );
+          category,
 
-        return;
-      }
+          description,
 
+          transaction_date:
+            date
 
-      closeModal(
-        "transactionModal"
-      );
+        });
 
-      event.target.reset();
+    if (error)
+      throw error;
 
+    closeModal(
+      "transactionModal"
+    );
 
-      /*
-         Reload everything after adding
-         the transaction.
-      */
+    event.target.reset();
 
-      await loadTransactions();
+    if ($("#transactionDate")) {
 
-      updateDashboard();
-
-      updateIntelligence();
-
-      renderTransactionHistory();
-
-
-      showToast(
-        "Transaction saved."
-      );
+      $("#transactionDate").value =
+        new Date()
+          .toISOString()
+          .split("T")[0];
 
     }
-  );
+
+    /*
+      Reload from Supabase.
+
+      This guarantees that History is showing
+      the actual database record.
+    */
+
+    await loadTransactions();
+
+    updateDashboard();
+
+    updateIntelligence();
+
+    renderTransactionHistory();
+
+    showToast(
+      "Transaction saved successfully."
+    );
+
+  } catch (error) {
+
+    console.error(
+      "TRANSACTION SAVE ERROR:",
+      error
+    );
+
+    showToast(
+      error.message ||
+      "Unable to save transaction."
+    );
+
+  }
+
+});
+
+
+/* ============================================================
+   TRANSACTION HISTORY
+   ============================================================ */
+
+function renderTransactionHistory() {
+
+  const container =
+    $("#transactionHistoryList");
+
+  if (!container)
+    return;
+
+  let filtered =
+    [...transactions];
+
+  /* FILTER */
+
+  if (
+    transactionHistoryFilter !==
+    "all"
+  ) {
+
+    filtered =
+      transactions.filter(
+        transaction =>
+          transaction.transaction_type ===
+          transactionHistoryFilter
+      );
+
+  }
+
+
+  /* TOTALS */
+
+  let income = 0;
+  let expenses = 0;
+
+  transactions.forEach(transaction => {
+
+    const amount =
+      Number(transaction.amount) || 0;
+
+    if (
+      transaction.transaction_type ===
+      "income"
+    ) {
+
+      income += amount;
+
+    } else if (
+      transaction.transaction_type ===
+      "expense"
+    ) {
+
+      expenses += amount;
+
+    }
+
+  });
+
+
+  const net =
+    income - expenses;
+
+
+  /* SUMMARY */
+
+  if ($("#historyIncome")) {
+
+    $("#historyIncome")
+      .textContent =
+      formatMoney(income);
+
+  }
+
+  if ($("#historyExpenses")) {
+
+    $("#historyExpenses")
+      .textContent =
+      formatMoney(expenses);
+
+  }
+
+  if ($("#historyNet")) {
+
+    $("#historyNet")
+      .textContent =
+      formatMoney(net);
+
+  }
+
+
+  /* EMPTY STATE */
+
+  if (!filtered.length) {
+
+    let message =
+      "Your income and expenses will appear here.";
+
+    if (
+      transactionHistoryFilter ===
+      "income"
+    ) {
+
+      message =
+        "No income transactions found.";
+
+    }
+
+    if (
+      transactionHistoryFilter ===
+      "expense"
+    ) {
+
+      message =
+        "No expense transactions found.";
+
+    }
+
+    container.innerHTML = `
+
+      <div class="empty-state">
+
+        <span>◎</span>
+
+        <h3>
+          No transactions
+        </h3>
+
+        <p>
+          ${message}
+        </p>
+
+      </div>
+
+    `;
+
+    return;
+
+  }
+
+
+  /* TRANSACTION LIST */
+
+  container.innerHTML =
+    filtered
+      .map(transaction => {
+
+        const amount =
+          Number(
+            transaction.amount
+          ) || 0;
+
+        const isIncome =
+          transaction.transaction_type ===
+          "income";
+
+        const sign =
+          isIncome
+            ? "+"
+            : "-";
+
+        const date =
+          transaction.transaction_date
+            ? new Date(
+                transaction.transaction_date +
+                "T00:00:00"
+              ).toLocaleDateString()
+            : "No date";
+
+        return `
+
+          <div
+            class="transaction-history-item"
+          >
+
+            <div
+              class="transaction-history-icon"
+            >
+              ${isIncome ? "↑" : "↓"}
+            </div>
+
+
+            <div
+              class="transaction-history-info"
+            >
+
+              <strong>
+                ${escapeHTML(
+                  transaction.category ||
+                  "Uncategorized"
+                )}
+              </strong>
+
+              <span>
+                ${escapeHTML(
+                  transaction.description ||
+                  (
+                    isIncome
+                      ? "Income"
+                      : "Expense"
+                  )
+                )}
+              </span>
+
+              <small>
+                ${date}
+              </small>
+
+            </div>
+
+
+            <div
+              class="
+                transaction-history-amount
+                ${isIncome ? "income" : "expense"}
+              "
+            >
+
+              ${sign}${formatMoney(amount)}
+
+            </div>
+
+          </div>
+
+        `;
+
+      })
+      .join("");
+
+}
+
+
+/* ============================================================
+   HISTORY FILTERS
+   ============================================================ */
+
+$$(".transaction-filter")
+  .forEach(button => {
+
+    button.addEventListener(
+      "click",
+      () => {
+
+        $$(".transaction-filter")
+          .forEach(filter =>
+            filter.classList.remove(
+              "active"
+            )
+          );
+
+        button.classList.add(
+          "active"
+        );
+
+        transactionHistoryFilter =
+          button.dataset.filter ||
+          "all";
+
+        renderTransactionHistory();
+
+      }
+    );
+
+  });
+
+
+/* ============================================================
+   HISTORY → ADD TRANSACTION
+   ============================================================ */
+
+on(
+  "historyAddTransaction",
+  "click",
+  () => {
+
+    openModal(
+      "transactionModal"
+    );
+
+  }
+);
 
 
 /* ============================================================
@@ -746,7 +1056,10 @@ async function loadGoals() {
     await supabaseClient
       .from("goals")
       .select("*")
-      .eq("user_id", currentUser.id)
+      .eq(
+        "user_id",
+        currentUser.id
+      )
       .order(
         "created_at",
         {
@@ -754,16 +1067,18 @@ async function loadGoals() {
         }
       );
 
-
   if (error) {
 
-    console.error(error);
+    console.error(
+      "GOALS LOAD ERROR:",
+      error
+    );
 
     goals = [];
 
     return;
-  }
 
+  }
 
   goals =
     data || [];
@@ -777,78 +1092,75 @@ async function loadGoals() {
    CREATE GOAL
    ============================================================ */
 
-$("#goalForm")
-  .addEventListener(
-    "submit",
-    async event => {
+on("goalForm", "submit", async event => {
 
-      event.preventDefault();
+  event.preventDefault();
 
+  const goalName =
+    $("#goalName")
+      .value
+      .trim();
 
-      const goalName =
-        $("#goalName").value.trim();
+  const target =
+    Number(
+      $("#goalTarget").value
+    );
 
-      const target =
-        Number(
-          $("#goalTarget").value
-        );
+  const current =
+    Number(
+      $("#goalCurrent").value || 0
+    );
 
-      const current =
-        Number(
-          $("#goalCurrent").value || 0
-        );
+  const deadline =
+    $("#goalDeadline").value ||
+    null;
 
-      const deadline =
-        $("#goalDeadline").value ||
-        null;
+  const {
+    error
+  } =
+    await supabaseClient
+      .from("goals")
+      .insert({
 
+        user_id:
+          currentUser.id,
 
-      const {
-        error
-      } =
-        await supabaseClient
-          .from("goals")
-          .insert({
+        goal_name:
+          goalName,
 
-            user_id:
-              currentUser.id,
+        target_amount:
+          target,
 
-            goal_name:
-              goalName,
+        current_amount:
+          current,
 
-            target_amount:
-              target,
+        deadline
 
-            current_amount:
-              current,
+      });
 
-            deadline
+  if (error) {
 
-          });
+    showToast(
+      error.message
+    );
 
+    return;
 
-      if (error) {
+  }
 
-        showToast(
-          error.message
-        );
-
-        return;
-      }
-
-
-      closeModal("goalModal");
-
-      event.target.reset();
-
-      await loadGoals();
-
-      showToast(
-        "Goal created."
-      );
-
-    }
+  closeModal(
+    "goalModal"
   );
+
+  event.target.reset();
+
+  await loadGoals();
+
+  showToast(
+    "Goal created."
+  );
+
+});
 
 
 /* ============================================================
@@ -864,18 +1176,23 @@ async function loadDebts() {
     await supabaseClient
       .from("debts")
       .select("*")
-      .eq("user_id", currentUser.id);
-
+      .eq(
+        "user_id",
+        currentUser.id
+      );
 
   if (error) {
 
-    console.error(error);
+    console.error(
+      "DEBTS LOAD ERROR:",
+      error
+    );
 
     debts = [];
 
     return;
-  }
 
+  }
 
   debts =
     data || [];
@@ -884,30 +1201,34 @@ async function loadDebts() {
 
 
 /* ============================================================
-   DASHBOARD CALCULATIONS
+   DASHBOARD
    ============================================================ */
 
 function updateDashboard() {
 
   let income = 0;
-
   let expenses = 0;
 
-
   transactions.forEach(transaction => {
+
+    const amount =
+      Number(
+        transaction.amount
+      ) || 0;
 
     if (
       transaction.transaction_type ===
       "income"
     ) {
 
-      income +=
-        Number(transaction.amount);
+      income += amount;
 
-    } else {
+    } else if (
+      transaction.transaction_type ===
+      "expense"
+    ) {
 
-      expenses +=
-        Number(transaction.amount);
+      expenses += amount;
 
     }
 
@@ -923,7 +1244,9 @@ function updateDashboard() {
     debts.reduce(
       (total, debt) =>
         total +
-        Number(debt.balance || 0),
+        Number(
+          debt.balance || 0
+        ),
       0
     );
 
@@ -938,7 +1261,9 @@ function updateDashboard() {
     debts.reduce(
       (total, debt) =>
         total +
-        Number(debt.payment_amount || 0),
+        Number(
+          debt.payment_amount || 0
+        ),
       0
     );
 
@@ -951,24 +1276,31 @@ function updateDashboard() {
     );
 
 
-  $("#trueMoneyPosition")
-    .textContent =
-      formatMoney(moneyPosition);
+  if ($("#trueMoneyPosition"))
+    $("#trueMoneyPosition")
+      .textContent =
+      formatMoney(
+        moneyPosition
+      );
 
-  $("#incomeAmount")
-    .textContent =
+  if ($("#incomeAmount"))
+    $("#incomeAmount")
+      .textContent =
       formatMoney(income);
 
-  $("#savingsAmount")
-    .textContent =
+  if ($("#savingsAmount"))
+    $("#savingsAmount")
+      .textContent =
       formatMoney(savings);
 
-  $("#upcomingAmount")
-    .textContent =
+  if ($("#upcomingAmount"))
+    $("#upcomingAmount")
+      .textContent =
       formatMoney(upcoming);
 
-  $("#safeToSpend")
-    .textContent =
+  if ($("#safeToSpend"))
+    $("#safeToSpend")
+      .textContent =
       formatMoney(safeSpend);
 
 
@@ -981,15 +1313,17 @@ function updateDashboard() {
     );
 
 
-  $("#movaScore")
-    .textContent =
+  if ($("#movaScore"))
+    $("#movaScore")
+      .textContent =
       score === null
         ? "—"
         : score;
 
 
-  $("#scoreText")
-    .textContent =
+  if ($("#scoreText"))
+    $("#scoreText")
+      .textContent =
       getScoreText(score);
 
 
@@ -1020,9 +1354,7 @@ function calculateMovaScore(
 
   }
 
-
   let score = 50;
-
 
   if (income > expenses)
     score += 15;
@@ -1038,10 +1370,9 @@ function calculateMovaScore(
 
   if (
     income > 0 &&
-    expenses / income < .7
+    expenses / income < 0.7
   )
     score += 5;
-
 
   return Math.min(
     100,
@@ -1079,19 +1410,27 @@ function renderRecentTransactions() {
   const container =
     $("#recentTransactions");
 
-
   if (!container)
     return;
-
 
   if (!transactions.length) {
 
     container.innerHTML = `
+
       <div class="empty-state">
+
         <span>◎</span>
-        <strong>No transactions yet</strong>
-        <p>Start recording your money movement.</p>
+
+        <strong>
+          No transactions yet
+        </strong>
+
+        <p>
+          Start recording your money movement.
+        </p>
+
       </div>
+
     `;
 
     return;
@@ -1109,6 +1448,7 @@ function renderRecentTransactions() {
           "income";
 
         return `
+
           <div class="activity-item">
 
             <div class="activity-left">
@@ -1121,14 +1461,14 @@ function renderRecentTransactions() {
 
                 <strong>
                   ${escapeHTML(
-                    transaction.category ||
-                    "Uncategorized"
+                    transaction.category
                   )}
                 </strong>
 
                 <small>
                   ${escapeHTML(
-                    transaction.description || ""
+                    transaction.description ||
+                    ""
                   )}
                 </small>
 
@@ -1139,13 +1479,19 @@ function renderRecentTransactions() {
             <strong
               class="${isIncome ? "income" : "expense"}"
             >
+
               ${isIncome ? "+" : "-"}
+
               ${formatMoney(
-                Number(transaction.amount)
+                Number(
+                  transaction.amount
+                )
               )}
+
             </strong>
 
           </div>
+
         `;
 
       })
@@ -1166,7 +1512,6 @@ function renderGoals() {
   const page =
     $("#goalsPageList");
 
-
   if (!dashboard || !page)
     return;
 
@@ -1174,19 +1519,39 @@ function renderGoals() {
   if (!goals.length) {
 
     dashboard.innerHTML = `
+
       <div class="empty-state">
+
         <span>◎</span>
-        <strong>No goals yet</strong>
-        <p>Give your money a destination.</p>
+
+        <strong>
+          No goals yet
+        </strong>
+
+        <p>
+          Give your money a destination.
+        </p>
+
       </div>
+
     `;
 
     page.innerHTML = `
+
       <div class="empty-state">
+
         <span>◎</span>
-        <strong>No financial goals</strong>
-        <p>Create your first goal.</p>
+
+        <strong>
+          No financial goals
+        </strong>
+
+        <p>
+          Create your first goal.
+        </p>
+
       </div>
+
     `;
 
     return;
@@ -1195,61 +1560,75 @@ function renderGoals() {
 
 
   const html =
-    goals.map(goal => {
+    goals
+      .map(goal => {
 
-      const target =
-        Number(goal.target_amount || 0);
+        const target =
+          Number(
+            goal.target_amount || 0
+          );
 
-      const current =
-        Number(goal.current_amount || 0);
+        const current =
+          Number(
+            goal.current_amount || 0
+          );
 
-      const percentage =
-        target > 0
-          ? Math.min(
-              100,
-              (current / target) * 100
-            )
-          : 0;
+        const percentage =
+          target > 0
+            ? Math.min(
+                100,
+                (
+                  current /
+                  target
+                ) * 100
+              )
+            : 0;
 
+        return `
 
-      return `
-        <div class="goal-card">
+          <div class="goal-card">
 
-          <h3>
-            ${escapeHTML(
-              goal.goal_name
-            )}
-          </h3>
+            <h3>
+              ${escapeHTML(
+                goal.goal_name
+              )}
+            </h3>
 
-          <p>
-            ${goal.deadline
-              ? "Deadline: " +
+            <p>
+              ${
                 goal.deadline
-              : "No deadline set"}
-          </p>
+                  ? "Deadline: " +
+                    goal.deadline
+                  : "No deadline set"
+              }
+            </p>
 
-          <div class="progress">
-            <div
-              style="width:${percentage}%"
-            ></div>
+            <div class="progress">
+
+              <div
+                style="width:${percentage}%"
+              ></div>
+
+            </div>
+
+            <div class="goal-numbers">
+
+              <span>
+                ${formatMoney(current)}
+              </span>
+
+              <span>
+                ${formatMoney(target)}
+              </span>
+
+            </div>
+
           </div>
 
-          <div class="goal-numbers">
+        `;
 
-            <span>
-              ${formatMoney(current)}
-            </span>
-
-            <span>
-              ${formatMoney(target)}
-            </span>
-
-          </div>
-
-        </div>
-      `;
-
-    }).join("");
+      })
+      .join("");
 
 
   dashboard.innerHTML =
@@ -1269,16 +1648,23 @@ function renderGoals() {
             : 0;
 
         return `
+
           <div class="goal-item">
 
             <div>
+
               <strong>
-                ${escapeHTML(goal.goal_name)}
+                ${escapeHTML(
+                  goal.goal_name
+                )}
               </strong>
 
               <small>
-                ${Math.round(percentage)}% complete
+                ${Math.round(
+                  percentage
+                )}% complete
               </small>
+
             </div>
 
             <strong>
@@ -1288,6 +1674,7 @@ function renderGoals() {
             </strong>
 
           </div>
+
         `;
 
       })
@@ -1308,8 +1695,9 @@ function updateIntelligence() {
 
   if (!transactions.length) {
 
-    $("#spendingInsight")
-      .textContent =
+    if ($("#spendingInsight"))
+      $("#spendingInsight")
+        .textContent =
         "Add transactions to generate spending intelligence.";
 
     return;
@@ -1340,11 +1728,13 @@ function updateIntelligence() {
   expenses.forEach(t => {
 
     const category =
-      t.category || "Other";
+      t.category ||
+      "Other";
 
     categories[category] =
       (
-        categories[category] || 0
+        categories[category] ||
+        0
       ) +
       Number(t.amount);
 
@@ -1362,7 +1752,10 @@ function updateIntelligence() {
     .forEach(
       ([category, amount]) => {
 
-        if (amount > largestAmount) {
+        if (
+          amount >
+          largestAmount
+        ) {
 
           largestCategory =
             category;
@@ -1376,20 +1769,23 @@ function updateIntelligence() {
     );
 
 
-  $("#spendingInsight")
-    .textContent =
+  if ($("#spendingInsight"))
+    $("#spendingInsight")
+      .textContent =
       `You have recorded ${formatMoney(total)} in expenses. Your largest recorded spending category is ${largestCategory} at ${formatMoney(largestAmount)}.`;
 
 
-  $("#healthInsight")
-    .textContent =
+  if ($("#healthInsight"))
+    $("#healthInsight")
+      .textContent =
       transactions.length >= 5
         ? "Your financial picture is becoming clearer."
         : "Keep recording transactions for a clearer picture.";
 
 
-  $("#futureInsight")
-    .textContent =
+  if ($("#futureInsight"))
+    $("#futureInsight")
+      .textContent =
       total > 0
         ? "Your spending history can now be used to build future projections."
         : "Add financial activity to unlock projections.";
@@ -1401,103 +1797,107 @@ function updateIntelligence() {
    MOVA SAFE
    ============================================================ */
 
-$("#analyzeSafe")
-  .addEventListener(
-    "click",
-    async () => {
+on("analyzeSafe", "click", async () => {
 
-      const input =
-        $("#safeInput")
-          .value
-          .trim();
+  const input =
+    $("#safeInput")
+      .value
+      .trim();
 
+  if (!input) {
 
-      if (!input) {
+    showToast(
+      "Paste something for MOVA Safe to analyze."
+    );
 
-        showToast(
-          "Paste something for MOVA Safe to analyze."
-        );
+    return;
 
-        return;
-
-      }
+  }
 
 
-      const result =
-        analyzeRiskLocally(input);
+  const result =
+    analyzeRiskLocally(input);
 
 
-      $("#safeResult")
-        .classList.remove("hidden");
+  $("#safeResult")
+    .classList.remove("hidden");
 
-      $("#safeResult")
-        .className =
-          `safe-result risk-${result.level}`;
-
-      $("#safeResult").innerHTML = `
-
-        <span class="eyebrow">
-          MOVA SAFE RESULT
-        </span>
-
-        <h2>
-          ${result.title}
-        </h2>
-
-        <p>
-          Risk score:
-          <strong>
-            ${result.score}/100
-          </strong>
-        </p>
-
-        <p>
-          ${result.reason}
-        </p>
-
-        <p>
-          <strong>
-            Recommendation:
-          </strong>
-          ${result.recommendation}
-        </p>
-
-      `;
+  $("#safeResult").className =
+    `safe-result risk-${result.level}`;
 
 
-      await supabaseClient
-        .from("safe_checks")
-        .insert({
+  $("#safeResult").innerHTML = `
 
-          user_id:
-            currentUser.id,
+    <span class="eyebrow">
+      MOVA SAFE RESULT
+    </span>
 
-          check_type:
-            detectCheckType(input),
+    <h2>
+      ${result.title}
+    </h2>
 
-          submitted_value:
-            input,
+    <p>
+      Risk score:
+      <strong>
+        ${result.score}/100
+      </strong>
+    </p>
 
-          risk_level:
-            result.level,
+    <p>
+      ${result.reason}
+    </p>
 
-          risk_score:
-            result.score,
+    <p>
+      <strong>
+        Recommendation:
+      </strong>
+      ${result.recommendation}
+    </p>
 
-          explanation:
-            result.reason
+  `;
 
-        });
 
-    }
-  );
+  const {
+    error
+  } =
+    await supabaseClient
+      .from("safe_checks")
+      .insert({
+
+        user_id:
+          currentUser.id,
+
+        check_type:
+          detectCheckType(input),
+
+        submitted_value:
+          input,
+
+        risk_level:
+          result.level,
+
+        risk_score:
+          result.score,
+
+        explanation:
+          result.reason
+
+      });
+
+
+  if (error)
+    console.error(
+      "SAFE CHECK ERROR:",
+      error
+    );
+
+});
 
 
 function analyzeRiskLocally(text) {
 
   const lower =
     text.toLowerCase();
-
 
   const dangerWords = [
 
@@ -1604,14 +2004,10 @@ function detectCheckType(value) {
 
 
 /* ============================================================
-   PRICE SEARCH
+   MOVA PRICE
    ============================================================ */
 
-$("#searchPrice")
-  .addEventListener(
-    "click",
-    searchPrices
-  );
+on("searchPrice", "click", searchPrices);
 
 
 async function searchPrices() {
@@ -1620,7 +2016,6 @@ async function searchPrices() {
     $("#priceSearch")
       .value
       .trim();
-
 
   if (!query) {
 
@@ -1671,13 +2066,21 @@ async function searchPrices() {
   if (!data?.length) {
 
     container.innerHTML = `
+
       <div class="empty-state">
+
         <span>◇</span>
-        <strong>No price reports yet</strong>
+
+        <strong>
+          No price reports yet
+        </strong>
+
         <p>
           MOVA Price does not have enough community data for this product yet.
         </p>
+
       </div>
+
     `;
 
     return;
@@ -1686,41 +2089,56 @@ async function searchPrices() {
 
 
   container.innerHTML =
-    data.map(item => `
+    data
+      .map(item => `
 
-      <div class="price-item">
+        <div class="price-item">
 
-        <div>
+          <div>
 
-          <strong>
+            <strong>
+              ${escapeHTML(
+                item.product_name
+              )}
+            </strong>
+
+            <small>
+
+              ${escapeHTML(
+                item.merchant_name ||
+                "Merchant not specified"
+              )}
+
+              ${
+                item.location
+                  ? " · " +
+                    escapeHTML(
+                      item.location
+                    )
+                  : ""
+              }
+
+            </small>
+
+          </div>
+
+          <div class="price-value">
+
             ${escapeHTML(
-              item.product_name
+              item.currency ||
+              "USD"
             )}
-          </strong>
 
-          <small>
-            ${escapeHTML(
-              item.merchant_name ||
-              "Merchant not specified"
-            )}
-            ${item.location
-              ? " · " +
-                escapeHTML(item.location)
-              : ""}
-          </small>
+            ${Number(
+              item.price
+            ).toFixed(2)}
+
+          </div>
 
         </div>
 
-        <div class="price-value">
-          ${escapeHTML(
-            item.currency || "USD"
-          )}
-          ${Number(item.price).toFixed(2)}
-        </div>
-
-      </div>
-
-    `).join("");
+      `)
+      .join("");
 
 }
 
@@ -1729,11 +2147,7 @@ async function searchPrices() {
    AI COACH
    ============================================================ */
 
-$("#askCoach")
-  .addEventListener(
-    "click",
-    askCoach
-  );
+on("askCoach", "click", askCoach);
 
 
 async function askCoach() {
@@ -1743,7 +2157,6 @@ async function askCoach() {
       .value
       .trim()
       .toLowerCase();
-
 
   if (!question) {
 
@@ -1764,7 +2177,7 @@ async function askCoach() {
           "income"
       )
       .reduce(
-        (sum,t) =>
+        (sum, t) =>
           sum +
           Number(t.amount),
         0
@@ -1779,7 +2192,7 @@ async function askCoach() {
           "expense"
       )
       .reduce(
-        (sum,t) =>
+        (sum, t) =>
           sum +
           Number(t.amount),
         0
@@ -1800,7 +2213,6 @@ async function askCoach() {
 
   }
 
-
   else if (
     question.includes("save") ||
     question.includes("saving")
@@ -1811,7 +2223,6 @@ async function askCoach() {
 
   }
 
-
   else if (
     question.includes("budget")
   ) {
@@ -1820,7 +2231,6 @@ async function askCoach() {
       "Start with your recorded income, essential expenses and upcoming obligations. Your safe-to-spend amount should be based on what remains after those obligations.";
 
   }
-
 
   else if (
     question.includes("debt")
@@ -1832,31 +2242,42 @@ async function askCoach() {
   }
 
 
-  $("#coachAnswer")
-    .textContent =
+  if ($("#coachAnswer"))
+    $("#coachAnswer")
+      .textContent =
       answer;
 
 
-  await supabaseClient
-    .from("ai_insights")
-    .insert({
+  const {
+    error
+  } =
+    await supabaseClient
+      .from("ai_insights")
+      .insert({
 
-      user_id:
-        currentUser.id,
+        user_id:
+          currentUser.id,
 
-      insight_type:
-        "coach_question",
+        insight_type:
+          "coach_question",
 
-      title:
-        "MOVA Coach",
+        title:
+          "MOVA Coach",
 
-      message:
-        answer,
+        message:
+          answer,
 
-      priority:
-        "normal"
+        priority:
+          "normal"
 
-    });
+      });
+
+
+  if (error)
+    console.error(
+      "COACH SAVE ERROR:",
+      error
+    );
 
 }
 
@@ -1867,8 +2288,12 @@ async function askCoach() {
 
 function updateProfile() {
 
+  if (!currentUser)
+    return;
+
   const metadata =
-    currentUser.user_metadata || {};
+    currentUser.user_metadata ||
+    {};
 
 
   const name =
@@ -1877,21 +2302,24 @@ function updateProfile() {
     "MOVA User";
 
 
-  $("#userFirstName")
-    .textContent =
+  if ($("#userFirstName"))
+    $("#userFirstName")
+      .textContent =
       name
         ? " " +
           name.split(" ")[0]
         : "";
 
 
-  $("#profileName")
-    .textContent =
+  if ($("#profileName"))
+    $("#profileName")
+      .textContent =
       name;
 
 
-  $("#profileEmail")
-    .textContent =
+  if ($("#profileEmail"))
+    $("#profileEmail")
+      .textContent =
       currentUser.email ||
       "—";
 
@@ -1906,25 +2334,17 @@ function updateProfile() {
     "trial";
 
 
-  if (
-    plan === "pro"
-  ) {
-
+  if ($("#membershipTitle"))
     $("#membershipTitle")
       .textContent =
-      "MOVA Pro";
+      plan === "pro"
+        ? "MOVA Pro"
+        : "MOVA Free";
 
-  } else {
 
-    $("#membershipTitle")
+  if ($("#membershipText"))
+    $("#membershipText")
       .textContent =
-      "MOVA Free";
-
-  }
-
-
-  $("#membershipText")
-    .textContent =
       status === "trial"
         ? "Your 7-day MOVA Pro trial is active."
         : "Your current MOVA plan is active.";
@@ -1945,9 +2365,9 @@ function updateTrialCountdown() {
     !currentProfile?.trial_ends_at
   ) {
 
-    $("#trialCountdown")
-      .textContent =
-      "";
+    if ($("#trialCountdown"))
+      $("#trialCountdown")
+        .textContent = "";
 
     return;
 
@@ -1959,10 +2379,8 @@ function updateTrialCountdown() {
       currentProfile.trial_ends_at
     );
 
-
   const now =
     new Date();
-
 
   const difference =
     end - now;
@@ -1972,7 +2390,7 @@ function updateTrialCountdown() {
 
     $("#trialCountdown")
       .textContent =
-        "Your trial has ended. Choose your MOVA plan.";
+      "Your trial has ended. Choose your MOVA plan.";
 
     return;
 
@@ -1998,7 +2416,7 @@ function updateTrialCountdown() {
 
   $("#trialCountdown")
     .textContent =
-      `Pro trial: ${days} day${days === 1 ? "" : "s"} ${hours}h remaining`;
+    `Pro trial: ${days} day${days === 1 ? "" : "s"} ${hours}h remaining`;
 
 }
 
@@ -2016,19 +2434,28 @@ $$(".nav-item").forEach(button => {
       const page =
         button.dataset.page;
 
+      if (!page)
+        return;
+
 
       $$(".nav-item")
         .forEach(item =>
-          item.classList.remove("active")
+          item.classList.remove(
+            "active"
+          )
         );
 
 
-      button.classList.add("active");
+      button.classList.add(
+        "active"
+      );
 
 
       $$(".page")
         .forEach(item =>
-          item.classList.remove("active-page")
+          item.classList.remove(
+            "active-page"
+          )
         );
 
 
@@ -2038,26 +2465,36 @@ $$(".nav-item").forEach(button => {
         );
 
 
-      if (target)
+      if (target) {
+
         target.classList.add(
           "active-page"
         );
 
+      }
+
 
       /*
-         Whenever the Transactions page is opened,
-         refresh the history display.
+        Special handling for Transactions.
+
+        Whenever the user opens Transactions,
+        refresh the data from Supabase.
       */
 
-      if (page === "transactions") {
+      if (
+        page === "transactions"
+      ) {
+
+        loadTransactions();
 
         renderTransactionHistory();
 
       }
 
 
-      $("#sidebar")
-        .classList.remove("open");
+      if ($("#sidebar"))
+        $("#sidebar")
+          .classList.remove("open");
 
     }
   );
@@ -2069,16 +2506,13 @@ $$(".nav-item").forEach(button => {
    MOBILE MENU
    ============================================================ */
 
-$("#menuButton")
-  .addEventListener(
-    "click",
-    () => {
+on("menuButton", "click", () => {
 
-      $("#sidebar")
-        .classList.toggle("open");
+  if ($("#sidebar"))
+    $("#sidebar")
+      .classList.toggle("open");
 
-    }
-  );
+});
 
 
 /* ============================================================
@@ -2091,7 +2525,9 @@ function openModal(id) {
     document.getElementById(id);
 
   if (modal)
-    modal.classList.remove("hidden");
+    modal.classList.remove(
+      "hidden"
+    );
 
 }
 
@@ -2102,7 +2538,9 @@ function closeModal(id) {
     document.getElementById(id);
 
   if (modal)
-    modal.classList.add("hidden");
+    modal.classList.add(
+      "hidden"
+    );
 
 }
 
@@ -2123,104 +2561,106 @@ $$("[data-close]").forEach(button => {
 });
 
 
-/* ============================================================
-   ADD TRANSACTION BUTTONS
-   ============================================================ */
+/* DASHBOARD ADD */
 
-$("#addTransactionButton")
-  .addEventListener(
-    "click",
-    () =>
-      openModal("transactionModal")
-  );
-
-
-$("#addTransactionButton2")
-  .addEventListener(
-    "click",
-    () =>
-      openModal("transactionModal")
-  );
+on(
+  "addTransactionButton",
+  "click",
+  () =>
+    openModal(
+      "transactionModal"
+    )
+);
 
 
-/*
-   NEW:
-   Add transaction button from
-   the transaction history page.
-*/
+/* DASHBOARD ADD 2 */
 
-const historyAddTransaction =
-  $("#historyAddTransaction");
-
-if (historyAddTransaction) {
-
-  historyAddTransaction.addEventListener(
-    "click",
-    () =>
-      openModal("transactionModal")
-  );
-
-}
+on(
+  "addTransactionButton2",
+  "click",
+  () =>
+    openModal(
+      "transactionModal"
+    )
+);
 
 
-/* ============================================================
-   GOAL BUTTONS
-   ============================================================ */
+/* HISTORY ADD */
 
-$("#addGoalButton")
-  .addEventListener(
-    "click",
-    () =>
-      openModal("goalModal")
-  );
+on(
+  "historyAddTransaction",
+  "click",
+  () =>
+    openModal(
+      "transactionModal"
+    )
+);
 
 
-$("#createGoalButton")
-  .addEventListener(
-    "click",
-    () =>
-      openModal("goalModal")
-  );
+/* GOAL BUTTONS */
+
+on(
+  "addGoalButton",
+  "click",
+  () =>
+    openModal(
+      "goalModal"
+    )
+);
+
+
+on(
+  "createGoalButton",
+  "click",
+  () =>
+    openModal(
+      "goalModal"
+    )
+);
 
 
 /* ============================================================
    SIGN OUT
    ============================================================ */
 
-$("#signOutButton")
-  .addEventListener(
-    "click",
-    async () => {
+on(
+  "signOutButton",
+  "click",
+  async () => {
 
-      await supabaseClient.auth.signOut();
+    await supabaseClient
+      .auth
+      .signOut();
 
-      currentUser = null;
+    currentUser = null;
 
-      currentProfile = null;
+    currentProfile = null;
 
-      transactions = [];
+    transactions = [];
 
-      goals = [];
+    goals = [];
 
-      debts = [];
+    debts = [];
 
-      showAuthScreen();
+    showAuthScreen();
 
-    }
-  );
+  }
+);
 
 
 /* ============================================================
-   SHOW AUTH
+   SHOW AUTH SCREEN
    ============================================================ */
 
 function showAuthScreen() {
 
-  $("#appScreen")
-    .classList.add("hidden");
+  if ($("#appScreen"))
+    $("#appScreen")
+      .classList.add("hidden");
 
-  $("#authScreen")
-    .classList.remove("hidden");
+  if ($("#authScreen"))
+    $("#authScreen")
+      .classList.remove("hidden");
 
   switchToLogin();
 
@@ -2235,7 +2675,6 @@ function formatMoney(amount) {
 
   const number =
     Number(amount || 0);
-
 
   return new Intl.NumberFormat(
     "en-US",
@@ -2255,25 +2694,26 @@ function formatMoney(amount) {
 
 function escapeHTML(value) {
 
-  return String(value ?? "")
-    .replace(
-      /[&<>"']/g,
-      character => {
+  return String(
+    value ?? ""
+  ).replace(
+    /[&<>"']/g,
+    character => {
 
-        const map = {
+      const map = {
 
-          "&": "&amp;",
-          "<": "&lt;",
-          ">": "&gt;",
-          '"': "&quot;",
-          "'": "&#039;"
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
 
-        };
+      };
 
-        return map[character];
+      return map[character];
 
-      }
-    );
+    }
+  );
 
 }
 
@@ -2287,17 +2727,22 @@ function showToast(message) {
   const toast =
     $("#toast");
 
-  if (!toast) return;
+  if (!toast)
+    return;
 
   toast.textContent =
     message;
 
-  toast.classList.add("show");
+  toast.classList.add(
+    "show"
+  );
 
 
   setTimeout(
     () =>
-      toast.classList.remove("show"),
+      toast.classList.remove(
+        "show"
+      ),
     3000
   );
 
@@ -2310,363 +2755,10 @@ function showToast(message) {
 
 if ($("#transactionDate")) {
 
-  $("#transactionDate")
-    .value =
-      new Date()
-        .toISOString()
-        .split("T")[0];
-
-}
-
-
-/* ============================================================
-   TRANSACTION HISTORY
-   ============================================================ */
-
-
-/*
-   Change between:
-   all
-   income
-   expense
-*/
-
-function setTransactionHistoryFilter(filter) {
-
-  transactionHistoryFilter =
-    filter;
-
-
-  /*
-     Update button appearance.
-  */
-
-  $$(".transaction-filter")
-    .forEach(button => {
-
-      button.classList.toggle(
-        "active",
-        button.dataset.filter === filter
-      );
-
-    });
-
-
-  renderTransactionHistory();
-
-}
-
-
-/* ============================================================
-   TRANSACTION HISTORY FILTER BUTTONS
-   ============================================================ */
-
-$$(".transaction-filter")
-  .forEach(button => {
-
-    button.addEventListener(
-      "click",
-      () => {
-
-        const filter =
-          button.dataset.filter ||
-          "all";
-
-
-        setTransactionHistoryFilter(
-          filter
-        );
-
-      }
-    );
-
-  });
-
-
-/* ============================================================
-   RENDER TRANSACTION HISTORY
-   ============================================================ */
-
-function renderTransactionHistory() {
-
-  const container =
-    $("#transactionHistoryList");
-
-
-  if (!container)
-    return;
-
-
-  /*
-     Apply current filter.
-  */
-
-  let filtered =
-    transactions;
-
-
-  if (
-    transactionHistoryFilter !==
-    "all"
-  ) {
-
-    filtered =
-      transactions.filter(
-        transaction =>
-          transaction.transaction_type ===
-          transactionHistoryFilter
-      );
-
-  }
-
-
-  /*
-     Calculate totals from ALL transactions,
-     not just the selected filter.
-  */
-
-  let income = 0;
-
-  let expenses = 0;
-
-
-  transactions.forEach(transaction => {
-
-    const amount =
-      Number(transaction.amount) || 0;
-
-
-    if (
-      transaction.transaction_type ===
-      "income"
-    ) {
-
-      income += amount;
-
-    }
-
-
-    else if (
-      transaction.transaction_type ===
-      "expense"
-    ) {
-
-      expenses += amount;
-
-    }
-
-  });
-
-
-  const net =
-    income - expenses;
-
-
-  /*
-     Update summary cards.
-  */
-
-  const incomeElement =
-    $("#historyIncome");
-
-  const expensesElement =
-    $("#historyExpenses");
-
-  const netElement =
-    $("#historyNet");
-
-
-  if (incomeElement) {
-
-    incomeElement.textContent =
-      formatMoney(income);
-
-  }
-
-
-  if (expensesElement) {
-
-    expensesElement.textContent =
-      formatMoney(expenses);
-
-  }
-
-
-  if (netElement) {
-
-    netElement.textContent =
-      formatMoney(net);
-
-  }
-
-
-  /*
-     Empty state.
-  */
-
-  if (!filtered.length) {
-
-    if (
-      transactionHistoryFilter ===
-      "all"
-    ) {
-
-      container.innerHTML = `
-        <div class="empty-state">
-
-          <span>◎</span>
-
-          <h3>
-            No transactions yet
-          </h3>
-
-          <p>
-            Your income and expenses
-            will appear here.
-          </p>
-
-        </div>
-      `;
-
-    }
-
-
-    else {
-
-      container.innerHTML = `
-        <div class="empty-state">
-
-          <span>◎</span>
-
-          <h3>
-            No ${
-              transactionHistoryFilter ===
-              "income"
-                ? "income"
-                : "expenses"
-            } found
-          </h3>
-
-          <p>
-            Try another filter or add
-            a new transaction.
-          </p>
-
-        </div>
-      `;
-
-    }
-
-    return;
-
-  }
-
-
-  /*
-     Render every transaction.
-  */
-
-  container.innerHTML =
-    filtered
-      .map(transaction => {
-
-        const amount =
-          Number(transaction.amount) || 0;
-
-
-        const isIncome =
-          transaction.transaction_type ===
-          "income";
-
-
-        const sign =
-          isIncome
-            ? "+"
-            : "-";
-
-
-        const date =
-          transaction.transaction_date
-            ? new Date(
-                transaction.transaction_date
-              ).toLocaleDateString(
-                undefined,
-                {
-                  year: "numeric",
-                  month: "short",
-                  day: "numeric"
-                }
-              )
-            : "No date";
-
-
-        const typeLabel =
-          isIncome
-            ? "Income"
-            : "Expense";
-
-
-        return `
-
-          <div
-            class="transaction-history-item"
-          >
-
-            <div
-              class="transaction-history-icon"
-            >
-              ${isIncome ? "↑" : "↓"}
-            </div>
-
-
-            <div
-              class="transaction-history-info"
-            >
-
-              <strong>
-                ${escapeHTML(
-                  transaction.category ||
-                  "Uncategorized"
-                )}
-              </strong>
-
-
-              <span>
-                ${escapeHTML(
-                  transaction.description ||
-                  typeLabel
-                )}
-              </span>
-
-
-              <small>
-                ${typeLabel}
-                ·
-                ${date}
-              </small>
-
-            </div>
-
-
-            <div
-              class="
-                transaction-history-amount
-                ${isIncome
-                  ? "income"
-                  : "expense"}
-              "
-            >
-
-              ${sign}${formatMoney(amount)}
-
-            </div>
-
-          </div>
-
-        `;
-
-      })
-      .join("");
+  $("#transactionDate").value =
+    new Date()
+      .toISOString()
+      .split("T")[0];
 
 }
 
@@ -2687,7 +2779,9 @@ function renderTransactionHistory() {
         .getSession();
 
 
-    if (data.session?.user) {
+    if (
+      data.session?.user
+    ) {
 
       currentUser =
         data.session.user;
@@ -2710,3 +2804,8 @@ function renderTransactionHistory() {
   }
 
 })();
+
+
+/* ============================================================
+   END MOVA APP
+   ============================================================ */
