@@ -2809,3 +2809,38 @@ if ($("#transactionDate")) {
 /* ============================================================
    END MOVA APP
    ============================================================ */
+
+
+
+/* ============================================================
+   MOVA INTELLIGENCE QUICK BUTTON
+   ============================================================ */
+
+const notificationButton =
+  document.getElementById("notificationButton");
+
+if (notificationButton) {
+
+  notificationButton.addEventListener(
+    "click",
+    () => {
+
+      const intelligenceButton =
+        document.querySelector(
+          '.nav-item[data-page="intelligence"]'
+        );
+
+      if (intelligenceButton) {
+
+        intelligenceButton.click();
+
+        showToast(
+          "MOVA Intelligence is ready."
+        );
+
+      }
+
+    }
+  );
+
+}
