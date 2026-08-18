@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
   <meta charset="UTF-8">
 
   <meta
@@ -8,7 +10,10 @@
     content="width=device-width, initial-scale=1.0, maximum-scale=1.0"
   >
 
-  <meta name="theme-color" content="#07110d">
+  <meta
+    name="theme-color"
+    content="#07110d"
+  >
 
   <meta
     name="description"
@@ -18,44 +23,72 @@
   <title>MOVA — Money Operating System</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    rel="preconnect"
+    href="https://fonts.gstatic.com"
+    crossorigin
+  >
 
   <link
     href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap"
     rel="stylesheet"
   >
 
-  <link rel="stylesheet" href="./styles.css">
+  <link
+    rel="stylesheet"
+    href="./styles.css"
+  >
+
 </head>
+
 
 <body>
 
-  <!-- ========================= -->
-  <!-- AUTH EXPERIENCE -->
-  <!-- ========================= -->
 
-  <section id="authScreen" class="auth-screen">
+  <!-- ========================================================= -->
+  <!-- AUTH EXPERIENCE -->
+  <!-- ========================================================= -->
+
+  <section
+    id="authScreen"
+    class="auth-screen"
+  >
 
     <div class="auth-background"></div>
 
     <div class="auth-container">
 
+
       <div class="brand-mark">
-        <div class="brand-symbol">M</div>
+
+        <div class="brand-symbol">
+          M
+        </div>
 
         <div>
-          <div class="brand-name">MOVA</div>
+
+          <div class="brand-name">
+            MOVA
+          </div>
+
           <div class="brand-subtitle">
             MONEY OPERATING SYSTEM
           </div>
+
         </div>
+
       </div>
+
 
       <div class="auth-card">
 
+
         <div class="auth-header">
 
-          <span class="eyebrow">YOUR FINANCIAL COMMAND CENTER</span>
+          <span class="eyebrow">
+            YOUR FINANCIAL COMMAND CENTER
+          </span>
 
           <h1 id="authTitle">
             Welcome back.
@@ -70,9 +103,14 @@
 
         <!-- SIGN IN -->
 
-        <form id="loginForm" class="auth-form">
+        <form
+          id="loginForm"
+          class="auth-form"
+        >
 
-          <label>Email address</label>
+          <label>
+            Email address
+          </label>
 
           <input
             id="loginEmail"
@@ -81,7 +119,10 @@
             required
           >
 
-          <label>Password</label>
+
+          <label>
+            Password
+          </label>
 
           <div class="password-field">
 
@@ -102,6 +143,7 @@
 
           </div>
 
+
           <button
             type="button"
             id="forgotPassword"
@@ -109,6 +151,7 @@
           >
             Forgot password?
           </button>
+
 
           <button
             class="primary-button full-width"
@@ -128,7 +171,9 @@
           class="auth-form hidden"
         >
 
-          <label>Full name</label>
+          <label>
+            Full name
+          </label>
 
           <input
             id="signupName"
@@ -137,7 +182,10 @@
             required
           >
 
-          <label>Email address</label>
+
+          <label>
+            Email address
+          </label>
 
           <input
             id="signupEmail"
@@ -146,7 +194,10 @@
             required
           >
 
-          <label>Password</label>
+
+          <label>
+            Password
+          </label>
 
           <div class="password-field">
 
@@ -168,6 +219,7 @@
 
           </div>
 
+
           <small>
             Use at least 8 characters.
           </small>
@@ -180,6 +232,7 @@
 
           <div class="plan-grid">
 
+
             <button
               type="button"
               class="plan-card selected"
@@ -191,7 +244,9 @@
                 <span>∞</span>
               </div>
 
-              <strong>$0</strong>
+              <strong>
+                $0
+              </strong>
 
               <p>
                 Essential money tracking and planning.
@@ -222,7 +277,9 @@
                 <span>$5</span>
               </div>
 
-              <strong>$5<span>/month</span></strong>
+              <strong>
+                $5<span>/month</span>
+              </strong>
 
               <p>
                 Deeper intelligence for serious money management.
@@ -302,6 +359,7 @@
 
       </div>
 
+
       <div class="auth-footer">
         © 2026 MOVA · Built for smarter money decisions.
       </div>
@@ -311,13 +369,21 @@
   </section>
 
 
-  <!-- ========================= -->
-  <!-- APP -->
-  <!-- ========================= -->
 
-  <section id="appScreen" class="app-screen hidden">
+  <!-- ========================================================= -->
+  <!-- MAIN APP -->
+  <!-- ========================================================= -->
+
+  <section
+    id="appScreen"
+    class="app-screen hidden"
+  >
+
+
+    <!-- TOPBAR -->
 
     <header class="topbar">
+
 
       <div class="topbar-brand">
 
@@ -326,8 +392,15 @@
         </div>
 
         <div>
-          <strong>MOVA</strong>
-          <span>Your Money Operating System</span>
+
+          <strong>
+            MOVA
+          </strong>
+
+          <span>
+            Your Money Operating System
+          </span>
+
         </div>
 
       </div>
@@ -338,13 +411,16 @@
         <button
           id="notificationButton"
           class="icon-button"
+          type="button"
         >
           ♧
         </button>
 
+
         <button
           id="menuButton"
           class="icon-button mobile-only"
+          type="button"
         >
           ☰
         </button>
@@ -354,69 +430,113 @@
     </header>
 
 
+
     <div class="app-layout">
 
 
+      <!-- ===================================================== -->
       <!-- SIDEBAR -->
+      <!-- ===================================================== -->
 
       <aside
         id="sidebar"
         class="sidebar"
       >
 
+
         <nav>
+
+
+          <!-- DASHBOARD -->
 
           <button
             class="nav-item active"
             data-page="dashboard"
+            type="button"
           >
             <span>⌂</span>
             Dashboard
           </button>
 
+
+          <!-- TRANSACTIONS / HISTORY -->
+
+          <button
+            class="nav-item"
+            data-page="transactions"
+            type="button"
+          >
+            <span>↔</span>
+            Transactions
+          </button>
+
+
+          <!-- INTELLIGENCE -->
+
           <button
             class="nav-item"
             data-page="intelligence"
+            type="button"
           >
             <span>◉</span>
             Intelligence
           </button>
 
+
+          <!-- MOVA SAFE -->
+
           <button
             class="nav-item"
             data-page="safe"
+            type="button"
           >
             <span>🛡</span>
             MOVA Safe
           </button>
 
+
+          <!-- MOVA PRICE -->
+
           <button
             class="nav-item"
             data-page="price"
+            type="button"
           >
             <span>🛒</span>
             MOVA Price
           </button>
 
+
+          <!-- GOALS -->
+
           <button
             class="nav-item"
             data-page="goals"
+            type="button"
           >
             <span>◎</span>
             Goals
           </button>
 
+
+          <!-- AI COACH -->
+
           <button
             class="nav-item"
             data-page="coach"
+            type="button"
           >
             <span>✦</span>
             AI Coach
           </button>
 
+
+          <!-- PROFILE -->
+
           <button
             class="nav-item"
             data-page="profile"
+            type="button"
           >
             <span>○</span>
             Profile
@@ -426,6 +546,7 @@
 
 
         <div class="sidebar-bottom">
+
 
           <div class="pro-mini-card">
 
@@ -444,6 +565,7 @@
             <button
               id="upgradeButton"
               class="secondary-button"
+              type="button"
             >
               Explore Pro
             </button>
@@ -454,6 +576,7 @@
           <button
             id="signOutButton"
             class="logout-button"
+            type="button"
           >
             ↪ Sign out
           </button>
@@ -463,17 +586,23 @@
       </aside>
 
 
-      <!-- MAIN -->
+
+      <!-- ===================================================== -->
+      <!-- MAIN CONTENT -->
+      <!-- ===================================================== -->
 
       <main class="main-content">
 
 
+        <!-- =================================================== -->
         <!-- DASHBOARD -->
+        <!-- =================================================== -->
 
         <div
           id="page-dashboard"
           class="page active-page"
         >
+
 
           <div class="page-heading">
 
@@ -496,9 +625,11 @@
 
             </div>
 
+
             <button
               id="addTransactionButton"
               class="primary-button"
+              type="button"
             >
               + Add transaction
             </button>
@@ -510,7 +641,9 @@
 
           <section class="hero-money-card">
 
+
             <div class="money-card-glow"></div>
+
 
             <div class="money-card-content">
 
@@ -555,9 +688,12 @@
 
           <section class="snapshot-grid">
 
+
             <div class="metric-card">
 
-              <span>SAFE TO SPEND</span>
+              <span>
+                SAFE TO SPEND
+              </span>
 
               <strong id="safeToSpend">
                 $0
@@ -569,9 +705,12 @@
 
             </div>
 
+
             <div class="metric-card">
 
-              <span>UPCOMING</span>
+              <span>
+                UPCOMING
+              </span>
 
               <strong id="upcomingAmount">
                 $0
@@ -583,9 +722,12 @@
 
             </div>
 
+
             <div class="metric-card">
 
-              <span>SAVINGS</span>
+              <span>
+                SAVINGS
+              </span>
 
               <strong id="savingsAmount">
                 $0
@@ -597,9 +739,12 @@
 
             </div>
 
+
             <div class="metric-card">
 
-              <span>MONTHLY INCOME</span>
+              <span>
+                MONTHLY INCOME
+              </span>
 
               <strong id="incomeAmount">
                 $0
@@ -618,11 +763,14 @@
 
           <section class="content-grid">
 
+
             <div class="panel">
+
 
               <div class="panel-heading">
 
                 <div>
+
                   <span class="eyebrow">
                     RECENT ACTIVITY
                   </span>
@@ -630,11 +778,14 @@
                   <h2>
                     Your money movement
                   </h2>
+
                 </div>
+
 
                 <button
                   id="addTransactionButton2"
                   class="small-button"
+                  type="button"
                 >
                   + Add
                 </button>
@@ -648,11 +799,17 @@
               >
 
                 <div class="empty-state">
+
                   <span>◎</span>
-                  <strong>No transactions yet</strong>
+
+                  <strong>
+                    No transactions yet
+                  </strong>
+
                   <p>
                     Start recording your money movement.
                   </p>
+
                 </div>
 
               </div>
@@ -660,11 +817,14 @@
             </div>
 
 
+
             <div class="panel">
+
 
               <div class="panel-heading">
 
                 <div>
+
                   <span class="eyebrow">
                     FINANCIAL GOALS
                   </span>
@@ -672,11 +832,14 @@
                   <h2>
                     Your goals
                   </h2>
+
                 </div>
+
 
                 <button
                   id="addGoalButton"
                   class="small-button"
+                  type="button"
                 >
                   + Goal
                 </button>
@@ -690,11 +853,17 @@
               >
 
                 <div class="empty-state">
+
                   <span>◎</span>
-                  <strong>No goals yet</strong>
+
+                  <strong>
+                    No goals yet
+                  </strong>
+
                   <p>
                     Give your money a destination.
                   </p>
+
                 </div>
 
               </div>
@@ -706,16 +875,174 @@
         </div>
 
 
+
+        <!-- =================================================== -->
+        <!-- TRANSACTIONS / HISTORY -->
+        <!-- =================================================== -->
+
+        <div
+          id="page-transactions"
+          class="page"
+        >
+
+
+          <div class="page-heading">
+
+
+            <div>
+
+              <span class="eyebrow">
+                YOUR MONEY
+              </span>
+
+              <h1>
+                Transactions
+              </h1>
+
+              <p>
+                See exactly where your money comes from and where it goes.
+              </p>
+
+            </div>
+
+
+            <button
+              type="button"
+              class="primary-button"
+              id="historyAddTransaction"
+            >
+              + Add transaction
+            </button>
+
+          </div>
+
+
+
+          <!-- TRANSACTION SUMMARY -->
+
+          <div class="transaction-summary">
+
+
+            <div class="summary-card">
+
+              <span>
+                Total income
+              </span>
+
+              <strong id="historyIncome">
+                $0.00
+              </strong>
+
+            </div>
+
+
+            <div class="summary-card">
+
+              <span>
+                Total expenses
+              </span>
+
+              <strong id="historyExpenses">
+                $0.00
+              </strong>
+
+            </div>
+
+
+            <div class="summary-card">
+
+              <span>
+                Net position
+              </span>
+
+              <strong id="historyNet">
+                $0.00
+              </strong>
+
+            </div>
+
+          </div>
+
+
+
+          <!-- FILTERS -->
+
+          <div class="transaction-filters">
+
+
+            <button
+              type="button"
+              class="transaction-filter active"
+              data-filter="all"
+            >
+              All
+            </button>
+
+
+            <button
+              type="button"
+              class="transaction-filter"
+              data-filter="income"
+            >
+              Income
+            </button>
+
+
+            <button
+              type="button"
+              class="transaction-filter"
+              data-filter="expense"
+            >
+              Expenses
+            </button>
+
+          </div>
+
+
+
+          <!-- TRANSACTION HISTORY -->
+
+          <div
+            id="transactionHistoryList"
+            class="transaction-history-list"
+          >
+
+            <div class="empty-state">
+
+              <span>
+                ◎
+              </span>
+
+              <strong>
+                No transactions yet
+              </strong>
+
+              <p>
+                Your income and expenses will appear here.
+              </p>
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+
+        <!-- =================================================== -->
         <!-- INTELLIGENCE -->
+        <!-- =================================================== -->
 
         <div
           id="page-intelligence"
           class="page"
         >
 
+
           <div class="page-heading">
 
             <div>
+
               <span class="eyebrow">
                 MOVA INTELLIGENCE
               </span>
@@ -727,6 +1054,7 @@
               <p>
                 MOVA turns your financial data into decisions.
               </p>
+
             </div>
 
           </div>
@@ -734,8 +1062,12 @@
 
           <section class="intelligence-grid">
 
+
             <article class="feature-card large">
-              <span class="feature-icon">◉</span>
+
+              <span class="feature-icon">
+                ◉
+              </span>
 
               <h2>
                 Spending Intelligence
@@ -758,7 +1090,9 @@
 
             <article class="feature-card">
 
-              <span class="feature-icon">◆</span>
+              <span class="feature-icon">
+                ◆
+              </span>
 
               <h2>
                 Financial Health
@@ -778,7 +1112,9 @@
 
             <article class="feature-card">
 
-              <span class="feature-icon">↗</span>
+              <span class="feature-icon">
+                ↗
+              </span>
 
               <h2>
                 Future Position
@@ -800,12 +1136,16 @@
         </div>
 
 
-        <!-- SAFE -->
+
+        <!-- =================================================== -->
+        <!-- MOVA SAFE -->
+        <!-- =================================================== -->
 
         <div
           id="page-safe"
           class="page"
         >
+
 
           <div class="page-heading">
 
@@ -830,6 +1170,7 @@
 
           <section class="safe-container">
 
+
             <div class="safe-hero">
 
               <div class="shield">
@@ -853,6 +1194,7 @@
               <button
                 id="analyzeSafe"
                 class="primary-button"
+                type="button"
               >
                 Analyze risk →
               </button>
@@ -870,12 +1212,16 @@
         </div>
 
 
-        <!-- PRICE -->
+
+        <!-- =================================================== -->
+        <!-- MOVA PRICE -->
+        <!-- =================================================== -->
 
         <div
           id="page-price"
           class="page"
         >
+
 
           <div class="page-heading">
 
@@ -908,6 +1254,7 @@
             <button
               id="searchPrice"
               class="primary-button"
+              type="button"
             >
               Search
             </button>
@@ -921,7 +1268,11 @@
           >
 
             <div class="empty-state">
-              <span>◇</span>
+
+              <span>
+                ◇
+              </span>
+
               <strong>
                 Price Intelligence
               </strong>
@@ -929,6 +1280,7 @@
               <p>
                 Search products to see available price reports.
               </p>
+
             </div>
 
           </div>
@@ -936,12 +1288,16 @@
         </div>
 
 
+
+        <!-- =================================================== -->
         <!-- GOALS -->
+        <!-- =================================================== -->
 
         <div
           id="page-goals"
           class="page"
         >
+
 
           <div class="page-heading">
 
@@ -957,9 +1313,11 @@
 
             </div>
 
+
             <button
               id="createGoalButton"
               class="primary-button"
+              type="button"
             >
               + Create financial goal
             </button>
@@ -975,12 +1333,16 @@
         </div>
 
 
+
+        <!-- =================================================== -->
         <!-- AI COACH -->
+        <!-- =================================================== -->
 
         <div
           id="page-coach"
           class="page"
         >
+
 
           <div class="page-heading">
 
@@ -1005,6 +1367,7 @@
 
           <section class="coach-card">
 
+
             <div class="coach-icon">
               ✦
             </div>
@@ -1019,6 +1382,7 @@
               will be added in a future release.
             </p>
 
+
             <div class="coach-input">
 
               <input
@@ -1029,11 +1393,13 @@
               <button
                 id="askCoach"
                 class="primary-button"
+                type="button"
               >
                 →
               </button>
 
             </div>
+
 
             <div
               id="coachAnswer"
@@ -1047,12 +1413,16 @@
         </div>
 
 
+
+        <!-- =================================================== -->
         <!-- PROFILE -->
+        <!-- =================================================== -->
 
         <div
           id="page-profile"
           class="page"
         >
+
 
           <div class="page-heading">
 
@@ -1114,6 +1484,7 @@
             <button
               id="managePlanButton"
               class="secondary-button"
+              type="button"
             >
               Upgrade / Manage plan
             </button>
@@ -1122,6 +1493,7 @@
 
         </div>
 
+
       </main>
 
     </div>
@@ -1129,9 +1501,10 @@
   </section>
 
 
-  <!-- ========================= -->
+
+  <!-- ========================================================= -->
   <!-- TRANSACTION MODAL -->
-  <!-- ========================= -->
+  <!-- ========================================================= -->
 
   <div
     id="transactionModal"
@@ -1140,12 +1513,15 @@
 
     <div class="modal-card">
 
+
       <button
         class="modal-close"
         data-close="transactionModal"
+        type="button"
       >
         ×
       </button>
+
 
       <span class="eyebrow">
         MONEY MOVEMENT
@@ -1155,21 +1531,39 @@
         Add transaction
       </h2>
 
+
       <form id="transactionForm">
+
 
         <div class="form-grid">
 
+
           <div>
-            <label>Type</label>
+
+            <label>
+              Type
+            </label>
 
             <select id="transactionType">
-              <option value="expense">Expense</option>
-              <option value="income">Income</option>
+
+              <option value="expense">
+                Expense
+              </option>
+
+              <option value="income">
+                Income
+              </option>
+
             </select>
+
           </div>
 
+
           <div>
-            <label>Amount</label>
+
+            <label>
+              Amount
+            </label>
 
             <input
               id="transactionAmount"
@@ -1179,11 +1573,15 @@
               placeholder="0.00"
               required
             >
+
           </div>
 
         </div>
 
-        <label>Category</label>
+
+        <label>
+          Category
+        </label>
 
         <input
           id="transactionCategory"
@@ -1191,20 +1589,27 @@
           required
         >
 
-        <label>Description</label>
+
+        <label>
+          Description
+        </label>
 
         <input
           id="transactionDescription"
           placeholder="Optional"
         >
 
-        <label>Date</label>
+
+        <label>
+          Date
+        </label>
 
         <input
           id="transactionDate"
           type="date"
           required
         >
+
 
         <button
           class="primary-button full-width"
@@ -1220,9 +1625,10 @@
   </div>
 
 
-  <!-- ========================= -->
+
+  <!-- ========================================================= -->
   <!-- GOAL MODAL -->
-  <!-- ========================= -->
+  <!-- ========================================================= -->
 
   <div
     id="goalModal"
@@ -1231,12 +1637,15 @@
 
     <div class="modal-card">
 
+
       <button
         class="modal-close"
         data-close="goalModal"
+        type="button"
       >
         ×
       </button>
+
 
       <span class="eyebrow">
         FINANCIAL GOAL
@@ -1246,9 +1655,13 @@
         Create a goal
       </h2>
 
+
       <form id="goalForm">
 
-        <label>Goal name</label>
+
+        <label>
+          Goal name
+        </label>
 
         <input
           id="goalName"
@@ -1256,7 +1669,10 @@
           required
         >
 
-        <label>Target amount</label>
+
+        <label>
+          Target amount
+        </label>
 
         <input
           id="goalTarget"
@@ -1267,7 +1683,10 @@
           required
         >
 
-        <label>Current amount</label>
+
+        <label>
+          Current amount
+        </label>
 
         <input
           id="goalCurrent"
@@ -1277,12 +1696,16 @@
           value="0"
         >
 
-        <label>Deadline</label>
+
+        <label>
+          Deadline
+        </label>
 
         <input
           id="goalDeadline"
           type="date"
         >
+
 
         <button
           class="primary-button full-width"
@@ -1298,7 +1721,10 @@
   </div>
 
 
+
+  <!-- ========================================================= -->
   <!-- TOAST -->
+  <!-- ========================================================= -->
 
   <div
     id="toast"
@@ -1306,14 +1732,28 @@
   ></div>
 
 
+
+  <!-- ========================================================= -->
   <!-- SUPABASE -->
+  <!-- ========================================================= -->
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+
+  <!-- MOVA JAVASCRIPT -->
+
   <script src="./app.js"></script>
 
-<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-<script>eruda.init();</script>
+
+  <!-- ERUDA DEVELOPMENT CONSOLE -->
+
+  <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+
+  <script>
+    eruda.init();
+  </script>
+
 
 </body>
+
 </html>
