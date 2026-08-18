@@ -6,18 +6,6 @@
 
 /* ============================================================
    SUPABASE CONFIGURATION
-   ============================================================
-
-   IMPORTANT:
-
-   Replace the two values below.
-
-   DO NOT put your Supabase SECRET key here.
-
-   Use:
-   1. Project URL
-   2. Publishable key
-
    ============================================================ */
 
 const SUPABASE_URL =
@@ -33,23 +21,13 @@ const supabaseClient =
     SUPABASE_PUBLISHABLE_KEY
   );
 
-console.log("MOVA SUPABASE URL:", SUPABASE_URL);
 
-fetch(SUPABASE_URL + "/rest/v1/profiles?select=*", {
-    headers: {
-        apikey: SUPABASE_PUBLISHABLE_KEY
-    }
-})
-.then(response => {
-    console.log("PROFILES HTTP STATUS:", response.status);
-    return response.text();
-})
-.then(data => {
-    console.log("PROFILES RESPONSE:", data);
-})
-.catch(error => {
-    console.error("PROFILES FETCH ERROR:", error);
-});
+console.log(
+  "MOVA SUPABASE URL:",
+  SUPABASE_URL
+);
+
+
 /* ============================================================
    GLOBAL STATE
    ============================================================ */
@@ -61,6 +39,8 @@ let selectedPlan = "free";
 let transactions = [];
 let goals = [];
 let debts = [];
+
+let transactionHistoryFilter = "all";
 
 
 /* ============================================================
@@ -81,6 +61,8 @@ const $$ = (selector) =>
 function showAuthMessage(message, type = "") {
 
   const box = $("#authMessage");
+
+  if (!box) return;
 
   box.textContent = message;
 
@@ -194,6 +176,8 @@ $$(".password-toggle").forEach(button => {
         document.getElementById(
           button.dataset.target
         );
+
+      if (!input) return;
 
       if (input.type === "password") {
 
@@ -467,6 +451,7 @@ async function loadApplication() {
   if (!currentUser)
     return;
 
+
   $("#authScreen")
     .classList.add("hidden");
 
@@ -482,11 +467,21 @@ async function loadApplication() {
 
   await loadDebts();
 
+
   updateDashboard();
 
   updateIntelligence();
 
   updateProfile();
+
+
+  /*
+     IMPORTANT:
+     Render transaction history after transactions
+     have been loaded from Supabase.
+  */
+
+  renderTransactionHistory();
 
 }
 
@@ -606,7 +601,10 @@ async function loadTransactions() {
 
   if (error) {
 
-    console.error(error);
+    console.error(
+      "TRANSACTION LOAD ERROR:",
+      error
+    );
 
     transactions = [];
 
@@ -616,6 +614,15 @@ async function loadTransactions() {
 
   transactions =
     data || [];
+
+
+  /*
+     IMPORTANT:
+     Update history whenever transactions
+     are loaded.
+  */
+
+  renderTransactionHistory();
 
 }
 
@@ -703,11 +710,20 @@ $("#transactionForm")
 
       event.target.reset();
 
+
+      /*
+         Reload everything after adding
+         the transaction.
+      */
+
       await loadTransactions();
 
       updateDashboard();
 
       updateIntelligence();
+
+      renderTransactionHistory();
+
 
       showToast(
         "Transaction saved."
@@ -1064,6 +1080,10 @@ function renderRecentTransactions() {
     $("#recentTransactions");
 
 
+  if (!container)
+    return;
+
+
   if (!transactions.length) {
 
     container.innerHTML = `
@@ -1101,7 +1121,8 @@ function renderRecentTransactions() {
 
                 <strong>
                   ${escapeHTML(
-                    transaction.category
+                    transaction.category ||
+                    "Uncategorized"
                   )}
                 </strong>
 
@@ -1144,6 +1165,10 @@ function renderGoals() {
 
   const page =
     $("#goalsPageList");
+
+
+  if (!dashboard || !page)
+    return;
 
 
   if (!goals.length) {
@@ -1373,7 +1398,7 @@ function updateIntelligence() {
 
 
 /* ============================================================
-   SAFE
+   MOVA SAFE
    ============================================================ */
 
 $("#analyzeSafe")
@@ -1887,13 +1912,13 @@ function updateProfile() {
 
     $("#membershipTitle")
       .textContent =
-        "MOVA Pro";
+      "MOVA Pro";
 
   } else {
 
     $("#membershipTitle")
       .textContent =
-        "MOVA Free";
+      "MOVA Free";
 
   }
 
@@ -1922,7 +1947,7 @@ function updateTrialCountdown() {
 
     $("#trialCountdown")
       .textContent =
-        "";
+      "";
 
     return;
 
@@ -2019,6 +2044,18 @@ $$(".nav-item").forEach(button => {
         );
 
 
+      /*
+         Whenever the Transactions page is opened,
+         refresh the history display.
+      */
+
+      if (page === "transactions") {
+
+        renderTransactionHistory();
+
+      }
+
+
       $("#sidebar")
         .classList.remove("open");
 
@@ -2050,18 +2087,22 @@ $("#menuButton")
 
 function openModal(id) {
 
-  document
-    .getElementById(id)
-    .classList.remove("hidden");
+  const modal =
+    document.getElementById(id);
+
+  if (modal)
+    modal.classList.remove("hidden");
 
 }
 
 
 function closeModal(id) {
 
-  document
-    .getElementById(id)
-    .classList.add("hidden");
+  const modal =
+    document.getElementById(id);
+
+  if (modal)
+    modal.classList.add("hidden");
 
 }
 
@@ -2082,6 +2123,10 @@ $$("[data-close]").forEach(button => {
 });
 
 
+/* ============================================================
+   ADD TRANSACTION BUTTONS
+   ============================================================ */
+
 $("#addTransactionButton")
   .addEventListener(
     "click",
@@ -2097,6 +2142,30 @@ $("#addTransactionButton2")
       openModal("transactionModal")
   );
 
+
+/*
+   NEW:
+   Add transaction button from
+   the transaction history page.
+*/
+
+const historyAddTransaction =
+  $("#historyAddTransaction");
+
+if (historyAddTransaction) {
+
+  historyAddTransaction.addEventListener(
+    "click",
+    () =>
+      openModal("transactionModal")
+  );
+
+}
+
+
+/* ============================================================
+   GOAL BUTTONS
+   ============================================================ */
 
 $("#addGoalButton")
   .addEventListener(
@@ -2128,6 +2197,12 @@ $("#signOutButton")
       currentUser = null;
 
       currentProfile = null;
+
+      transactions = [];
+
+      goals = [];
+
+      debts = [];
 
       showAuthScreen();
 
@@ -2212,6 +2287,8 @@ function showToast(message) {
   const toast =
     $("#toast");
 
+  if (!toast) return;
+
   toast.textContent =
     message;
 
@@ -2231,11 +2308,367 @@ function showToast(message) {
    INITIALIZE DATE
    ============================================================ */
 
-$("#transactionDate")
-  .value =
-    new Date()
-      .toISOString()
-      .split("T")[0];
+if ($("#transactionDate")) {
+
+  $("#transactionDate")
+    .value =
+      new Date()
+        .toISOString()
+        .split("T")[0];
+
+}
+
+
+/* ============================================================
+   TRANSACTION HISTORY
+   ============================================================ */
+
+
+/*
+   Change between:
+   all
+   income
+   expense
+*/
+
+function setTransactionHistoryFilter(filter) {
+
+  transactionHistoryFilter =
+    filter;
+
+
+  /*
+     Update button appearance.
+  */
+
+  $$(".transaction-filter")
+    .forEach(button => {
+
+      button.classList.toggle(
+        "active",
+        button.dataset.filter === filter
+      );
+
+    });
+
+
+  renderTransactionHistory();
+
+}
+
+
+/* ============================================================
+   TRANSACTION HISTORY FILTER BUTTONS
+   ============================================================ */
+
+$$(".transaction-filter")
+  .forEach(button => {
+
+    button.addEventListener(
+      "click",
+      () => {
+
+        const filter =
+          button.dataset.filter ||
+          "all";
+
+
+        setTransactionHistoryFilter(
+          filter
+        );
+
+      }
+    );
+
+  });
+
+
+/* ============================================================
+   RENDER TRANSACTION HISTORY
+   ============================================================ */
+
+function renderTransactionHistory() {
+
+  const container =
+    $("#transactionHistoryList");
+
+
+  if (!container)
+    return;
+
+
+  /*
+     Apply current filter.
+  */
+
+  let filtered =
+    transactions;
+
+
+  if (
+    transactionHistoryFilter !==
+    "all"
+  ) {
+
+    filtered =
+      transactions.filter(
+        transaction =>
+          transaction.transaction_type ===
+          transactionHistoryFilter
+      );
+
+  }
+
+
+  /*
+     Calculate totals from ALL transactions,
+     not just the selected filter.
+  */
+
+  let income = 0;
+
+  let expenses = 0;
+
+
+  transactions.forEach(transaction => {
+
+    const amount =
+      Number(transaction.amount) || 0;
+
+
+    if (
+      transaction.transaction_type ===
+      "income"
+    ) {
+
+      income += amount;
+
+    }
+
+
+    else if (
+      transaction.transaction_type ===
+      "expense"
+    ) {
+
+      expenses += amount;
+
+    }
+
+  });
+
+
+  const net =
+    income - expenses;
+
+
+  /*
+     Update summary cards.
+  */
+
+  const incomeElement =
+    $("#historyIncome");
+
+  const expensesElement =
+    $("#historyExpenses");
+
+  const netElement =
+    $("#historyNet");
+
+
+  if (incomeElement) {
+
+    incomeElement.textContent =
+      formatMoney(income);
+
+  }
+
+
+  if (expensesElement) {
+
+    expensesElement.textContent =
+      formatMoney(expenses);
+
+  }
+
+
+  if (netElement) {
+
+    netElement.textContent =
+      formatMoney(net);
+
+  }
+
+
+  /*
+     Empty state.
+  */
+
+  if (!filtered.length) {
+
+    if (
+      transactionHistoryFilter ===
+      "all"
+    ) {
+
+      container.innerHTML = `
+        <div class="empty-state">
+
+          <span>◎</span>
+
+          <h3>
+            No transactions yet
+          </h3>
+
+          <p>
+            Your income and expenses
+            will appear here.
+          </p>
+
+        </div>
+      `;
+
+    }
+
+
+    else {
+
+      container.innerHTML = `
+        <div class="empty-state">
+
+          <span>◎</span>
+
+          <h3>
+            No ${
+              transactionHistoryFilter ===
+              "income"
+                ? "income"
+                : "expenses"
+            } found
+          </h3>
+
+          <p>
+            Try another filter or add
+            a new transaction.
+          </p>
+
+        </div>
+      `;
+
+    }
+
+    return;
+
+  }
+
+
+  /*
+     Render every transaction.
+  */
+
+  container.innerHTML =
+    filtered
+      .map(transaction => {
+
+        const amount =
+          Number(transaction.amount) || 0;
+
+
+        const isIncome =
+          transaction.transaction_type ===
+          "income";
+
+
+        const sign =
+          isIncome
+            ? "+"
+            : "-";
+
+
+        const date =
+          transaction.transaction_date
+            ? new Date(
+                transaction.transaction_date
+              ).toLocaleDateString(
+                undefined,
+                {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric"
+                }
+              )
+            : "No date";
+
+
+        const typeLabel =
+          isIncome
+            ? "Income"
+            : "Expense";
+
+
+        return `
+
+          <div
+            class="transaction-history-item"
+          >
+
+            <div
+              class="transaction-history-icon"
+            >
+              ${isIncome ? "↑" : "↓"}
+            </div>
+
+
+            <div
+              class="transaction-history-info"
+            >
+
+              <strong>
+                ${escapeHTML(
+                  transaction.category ||
+                  "Uncategorized"
+                )}
+              </strong>
+
+
+              <span>
+                ${escapeHTML(
+                  transaction.description ||
+                  typeLabel
+                )}
+              </span>
+
+
+              <small>
+                ${typeLabel}
+                ·
+                ${date}
+              </small>
+
+            </div>
+
+
+            <div
+              class="
+                transaction-history-amount
+                ${isIncome
+                  ? "income"
+                  : "expense"}
+              "
+            >
+
+              ${sign}${formatMoney(amount)}
+
+            </div>
+
+          </div>
+
+        `;
+
+      })
+      .join("");
+
+}
 
 
 /* ============================================================
@@ -2277,193 +2710,3 @@ $("#transactionDate")
   }
 
 })();
-
-
-/* ============================================================
-   TRANSACTION HISTORY
-   ============================================================ */
-
-let transactionHistoryFilter = "all";
-
-
-function renderTransactionHistory() {
-
-  const container =
-    $("#transactionHistoryList");
-
-  if (!container) return;
-
-
-  let filtered =
-    transactions;
-
-
-  if (
-    transactionHistoryFilter !== "all"
-  ) {
-
-    filtered =
-      transactions.filter(
-        transaction =>
-          transaction.transaction_type ===
-          transactionHistoryFilter
-      );
-
-  }
-
-
-  let income = 0;
-  let expenses = 0;
-
-
-  transactions.forEach(transaction => {
-
-    const amount =
-      Number(transaction.amount) || 0;
-
-    if (
-      transaction.transaction_type ===
-      "income"
-    ) {
-
-      income += amount;
-
-    } else if (
-      transaction.transaction_type ===
-      "expense"
-    ) {
-
-      expenses += amount;
-
-    }
-
-  });
-
-
-  const net =
-    income - expenses;
-
-
-  const incomeElement =
-    $("#historyIncome");
-
-  const expensesElement =
-    $("#historyExpenses");
-
-  const netElement =
-    $("#historyNet");
-
-
-  if (incomeElement) {
-
-    incomeElement.textContent =
-      formatMoney(income);
-
-  }
-
-
-  if (expensesElement) {
-
-    expensesElement.textContent =
-      formatMoney(expenses);
-
-  }
-
-
-  if (netElement) {
-
-    netElement.textContent =
-      formatMoney(net);
-
-  }
-
-
-  if (!filtered.length) {
-
-    container.innerHTML = `
-      <div class="empty-state">
-        <h3>No transactions yet</h3>
-        <p>
-          Your income and expenses will appear here.
-        </p>
-      </div>
-    `;
-
-    return;
-
-  }
-
-
-  container.innerHTML =
-    filtered.map(transaction => {
-
-      const amount =
-        Number(transaction.amount) || 0;
-
-      const isIncome =
-        transaction.transaction_type ===
-        "income";
-
-      const sign =
-        isIncome ? "+" : "-";
-
-      const date =
-        transaction.transaction_date
-          ? new Date(
-              transaction.transaction_date
-            ).toLocaleDateString()
-          : "";
-
-
-      return `
-
-        <div class="transaction-history-item">
-
-          <div class="transaction-history-icon">
-
-            ${isIncome ? "↑" : "↓"}
-
-          </div>
-
-
-          <div class="transaction-history-info">
-
-            <strong>
-              ${escapeHTML(
-                transaction.category ||
-                "Uncategorized"
-              )}
-            </strong>
-
-            <span>
-              ${escapeHTML(
-                transaction.description ||
-                (isIncome
-                  ? "Income"
-                  : "Expense")
-              )}
-            </span>
-
-            <small>
-              ${date}
-            </small>
-
-          </div>
-
-
-          <div
-            class="transaction-history-amount
-            ${isIncome ? "income" : "expense"}"
-          >
-
-            ${sign}${formatMoney(amount)}
-
-          </div>
-
-        </div>
-
-      `;
-
-    }).join("");
-
-}
