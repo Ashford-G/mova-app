@@ -1,1 +1,1 @@
-g
+No database migrations are included intentionally. MOVA must continue using its existing Supabase project, schema, RLS policies and deployed Edge Functions. Inspect them before writing any migration SQL.
