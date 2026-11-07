@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { FormEvent } from 'react'
 import { Activity, ArrowDownLeft, ArrowUpRight, Bell, ChevronDown, CircleHelp, Command, CreditCard, Gauge, Goal, LayoutDashboard, LogOut, Menu, MessageCircle, Search, ShieldCheck, Sparkles, Wallet, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
