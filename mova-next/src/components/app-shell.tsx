@@ -28,7 +28,11 @@ const descriptions: Record<string,string> = {
   Profile:'Your account and preferences.',
 }
 
-export function AppShell({ email, onSignOut }: { email:string; onSignOut:()=>void }) {
+export function AppShell({ email, userId, onSignOut }: {
+  email: string
+  userId: string
+  onSignOut: () => void
+}) {
   const [active,setActive]=useState('Overview')
   const [mobileOpen,setMobileOpen]=useState(false)
   const [showBalance,setShowBalance]=useState(true)
