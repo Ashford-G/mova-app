@@ -210,7 +210,10 @@ export function AppShell({
           </p>
 
           <button
-            onClick={() => setActive('Profile')}
+            onClick={() => {
+              setActive('Profile')
+              setMobileOpen(false)
+            }}
             className="mt-3 text-xs font-semibold text-emerald-200"
           >
             Explore membership →
@@ -219,7 +222,7 @@ export function AppShell({
 
         <button
           onClick={onSignOut}
-          className="mt-4 flex w-full items-center gap-3 rounded-xl px-3 py-2 text-xs text-slate-500 hover:bg-white/5 hover:text-white"
+          className="mt-4 flex w-full items-center gap-3 rounded-xl px-3 py-2 text-xs text-slate-500 transition hover:bg-white/5 hover:text-white"
         >
           <LogOut size={15} />
           Sign out
@@ -248,36 +251,46 @@ export function AppShell({
       )}
 
       <div className="lg:pl-[248px]">
-        <header className="sticky top-0 z-20 flex h-[76px] items-center justify-between border-b border-white/[.07] bg-[#080f1b]/90 px-5 backdrop-blur-xl md:px-8">
-          <div className="flex items-center gap-3">
+        <header className="sticky top-0 z-20 flex h-[76px] items-center justify-between border-b border-white/[.07] bg-[#080f1b]/95 px-3 backdrop-blur-xl sm:px-5 md:px-8">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden"
+              className="lg:hidden shrink-0"
               onClick={() => setMobileOpen(true)}
             >
               <Menu size={19} />
             </Button>
 
-            <div>
-              <p className="text-sm font-semibold">{active}</p>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold">{active}</p>
               <p className="hidden text-[11px] text-slate-500 sm:block">
                 {descriptions[active]}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon">
+          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hidden sm:inline-flex"
+              aria-label="Search"
+            >
               <Search size={17} />
             </Button>
 
-            <Button variant="ghost" size="icon">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="hidden sm:inline-flex"
+              aria-label="Notifications"
+            >
               <Bell size={17} />
             </Button>
 
-            <div className="ml-2 flex items-center gap-2 border-l border-white/10 pl-3">
-              <div className="grid h-8 w-8 place-items-center rounded-full bg-slate-700 text-xs font-semibold">
+            <div className="ml-1 flex items-center gap-2 border-l border-white/10 pl-2 sm:ml-2 sm:pl-3">
+              <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-700 text-xs font-semibold">
                 {email.slice(0, 1).toUpperCase()}
               </div>
 
@@ -285,8 +298,20 @@ export function AppShell({
                 {email}
               </span>
 
-              <ChevronDown size={14} className="text-slate-500" />
+              <ChevronDown size={14} className="hidden text-slate-500 sm:block" />
             </div>
+
+            <button
+              onClick={onSignOut}
+              aria-label="Sign out"
+              title="Sign out"
+              className="ml-1 flex h-10 items-center justify-center gap-2 rounded-xl border border-rose-300/20 bg-rose-300/[.07] px-3 text-rose-200 transition hover:bg-rose-300/15 active:scale-95"
+            >
+              <LogOut size={17} />
+              <span className="hidden text-xs font-semibold sm:inline">
+                Sign out
+              </span>
+            </button>
           </div>
         </header>
 
