@@ -16,5 +16,9 @@ export default function App() {
   },[])
   async function signOut(){await supabase?.auth.signOut();setSession(null)}
   if(!ready) return <div className="grid min-h-screen place-items-center text-sm text-slate-400">Loading MOVA…</div>
-  return session ? <AppShell email={session.user.email ?? 'MOVA member'} onSignOut={signOut}/> : <AuthScreen/>
+  return session ? <AppShell
+  email={session.user.email ?? 'MOVA member'}
+  userId={session.user.id}
+  onSignOut={signOut}
+/> : <AuthScreen/>
 }
