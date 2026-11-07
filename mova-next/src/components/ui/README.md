@@ -1,1 +1,0 @@
-Reusable MOVA-customised shadcn/ui-compatible primitives live here. Add generated shadcn components here as needed; customise tokens and variants to maintain the MOVA design system.
