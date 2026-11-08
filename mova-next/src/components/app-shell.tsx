@@ -1861,10 +1861,22 @@ export function AppShell({
                 MOVA Safe is a decision-support calculation, not a guarantee of financial safety. Its result depends on the accuracy and completeness of the amounts you enter. The 10% buffer is a simple MOVA rule, not a universal financial standard.
               </p>
             </div>
-                 ) : active === 'MOVA Price' ? (
-            <MovaPricePanel userId={userId} currency={currency} />   
+               ) : active === 'MOVA Price' ? (
+  <MovaPricePanel userId={userId} currency={currency} />
 
-) : (
+) : active === 'Profile' ? (
+  <ProfilePanel
+    userId={userId}
+    email={email}
+    currency={currency}
+    onCurrencyChange={(nextCurrency) =>
+      setDashboard(current =>
+        current ? { ...current, currency: nextCurrency } : current
+      )
+    }
+  />
+
+) : (  
             <Card>
               <CardContent className="p-8 md:p-10">
                 <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-emerald-300/10 text-emerald-200">
