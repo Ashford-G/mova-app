@@ -83,7 +83,7 @@ type SafeAssessment = {
   savingsCommitments: number
   spendableMoney: number
   remainingAfterPurchase: number
-  riskLevel: 'affordable' | 'be_careful' | 'not_affordable'
+  riskLevel: 'low' | 'medium' | 'high' | 'unknown'
   riskScore: number
   explanation: string
   createdAt: string
@@ -114,12 +114,12 @@ function getSafeDecision(
   const spendableMoney = availableMoney - totalCommitments
   const remainingAfterPurchase = spendableMoney - purchasePrice
 
-  let riskLevel: SafeAssessment['riskLevel']
+  let riskLevel: 'low' | 'medium' | 'high'
   let riskScore: number
   let explanation: string
 
   if (spendableMoney < 0 || purchasePrice > spendableMoney) {
-    riskLevel = 'not_affordable'
+    riskLevel = 'high'
     riskScore = 90
 
     explanation =
@@ -129,13 +129,13 @@ function getSafeDecision(
   } else if (
     remainingAfterPurchase < Math.max(availableMoney * 0.1, 0.01)
   ) {
-    riskLevel = 'be_careful'
+    riskLevel = 'medium'
     riskScore = 55
 
     explanation =
       'You can cover this purchase based on the figures entered, but it would leave you with a small cash buffer. Consider waiting or choosing a cheaper option.'
   } else {
-    riskLevel = 'affordable'
+    riskLevel = 'low'
     riskScore = 15
 
     explanation =
@@ -160,6 +160,18 @@ function mapSafeAssessment(row: any): SafeAssessment {
     submitted = {}
   }
 
+  // Convert any older assessment labels into the database risk levels.
+  const storedRiskLevel = String(row.risk_level || 'unknown')
+
+  const riskLevel: SafeAssessment['riskLevel'] =
+    storedRiskLevel === 'low' || storedRiskLevel === 'affordable'
+      ? 'low'
+      : storedRiskLevel === 'medium' || storedRiskLevel === 'be_careful'
+        ? 'medium'
+        : storedRiskLevel === 'high' || storedRiskLevel === 'not_affordable'
+          ? 'high'
+          : 'unknown'
+
   return {
     id: row.id,
     itemName: submitted.itemName || 'Purchase assessment',
@@ -172,11 +184,18 @@ function mapSafeAssessment(row: any): SafeAssessment {
     remainingAfterPurchase: Number(
       submitted.remainingAfterPurchase ?? 0
     ),
-    riskLevel: row.risk_level,
+    riskLevel,
     riskScore: Number(row.risk_score ?? 0),
     explanation: row.explanation || '',
     createdAt: row.created_at,
   }
+}
+
+function getSafeRiskLabel(riskLevel: SafeAssessment['riskLevel']) {
+  if (riskLevel === 'low') return 'Affordable'
+  if (riskLevel === 'medium') return 'Be careful'
+  if (riskLevel === 'high') return 'Not affordable right now'
+  return 'Assessment unavailable'
 }
 
 function getErrorMessage(error: unknown): string {
@@ -683,7 +702,7 @@ export function AppShell({
         remainingAfterPurchase: decision.remainingAfterPurchase,
       }
 
-      // Save using the new purchase_affordability database category.
+      // Save using the database-approved purchase_affordability category.
       const { error } = await supabase
         .from('safe_checks')
         .insert({
@@ -1628,11 +1647,13 @@ export function AppShell({
 
               {latestSafeAssessment && (
                 <Card className={
-                  latestSafeAssessment.riskLevel === 'affordable'
+                  latestSafeAssessment.riskLevel === 'low'
                     ? 'border-emerald-300/25'
-                    : latestSafeAssessment.riskLevel === 'be_careful'
+                    : latestSafeAssessment.riskLevel === 'medium'
                       ? 'border-amber-300/25'
-                      : 'border-rose-300/25'
+                      : latestSafeAssessment.riskLevel === 'high'
+                        ? 'border-rose-300/25'
+                        : 'border-white/10'
                 }>
                   <CardContent className="p-5 md:p-7">
                     <div className="flex flex-wrap items-start justify-between gap-3">
@@ -1641,11 +1662,7 @@ export function AppShell({
                         <h2 className="mt-2 text-xl font-semibold">{latestSafeAssessment.itemName}</h2>
                       </div>
                       <Badge>
-                        {latestSafeAssessment.riskLevel === 'affordable'
-                          ? 'Affordable'
-                          : latestSafeAssessment.riskLevel === 'be_careful'
-                            ? 'Be careful'
-                            : 'Not affordable right now'}
+                        {getSafeRiskLabel(latestSafeAssessment.riskLevel)}
                       </Badge>
                     </div>
 
@@ -1704,11 +1721,7 @@ export function AppShell({
                             </p>
                           </div>
                           <Badge>
-                            {assessment.riskLevel === 'affordable'
-                              ? 'Affordable'
-                              : assessment.riskLevel === 'be_careful'
-                                ? 'Be careful'
-                                : 'Not affordable'}
+                            {getSafeRiskLabel(assessment.riskLevel)}
                           </Badge>
                         </div>
                       ))}
