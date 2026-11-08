@@ -93,7 +93,8 @@ function createAdvice(
     0
   )
 
-  const cashFlow = dashboard.transactionIncome - dashboard.transactionExpenses
+  const cashFlow =
+    dashboard.transactionIncome - dashboard.transactionExpenses
 
   const expenseCategories = new Map<string, number>()
 
@@ -190,6 +191,7 @@ export function AiCoachPanel({ userId, currency }: Props) {
   const [asking, setAsking] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+  const [usingFallback, setUsingFallback] = useState(false)
 
   async function loadCoachData() {
     setLoading(true)
@@ -256,18 +258,11 @@ export function AiCoachPanel({ userId, currency }: Props) {
   }
 
   useEffect(() => {
-    let cancelled = false
-
     async function initialise() {
-      await loadCoachData()
-      await loadHistory()
+      await Promise.all([loadCoachData(), loadHistory()])
     }
 
-    if (!cancelled) initialise()
-
-    return () => {
-      cancelled = true
-    }
+    initialise()
   }, [userId])
 
   const latestMessage = useMemo(
@@ -280,6 +275,11 @@ export function AiCoachPanel({ userId, currency }: Props) {
 
     if (!cleanQuestion) {
       setNotice('Enter a question first.')
+      return
+    }
+
+    if (cleanQuestion.length > 500) {
+      setNotice('Your question must be 500 characters or fewer.')
       return
     }
 
@@ -296,9 +296,38 @@ export function AiCoachPanel({ userId, currency }: Props) {
     setAsking(true)
     setNotice('')
     setError('')
+    setUsingFallback(false)
 
     try {
-      const answer = createAdvice(
+      // First, try the live MOVA AI Edge Function.
+      const { data: aiData, error: aiError } =
+        await supabase.functions.invoke('mova-ai-coach', {
+          body: {
+            question: cleanQuestion,
+          },
+        })
+
+      if (!aiError && aiData?.answer) {
+        // The Edge Function already saves successful AI conversations.
+        const newMessage: CoachMessage = {
+          id: aiData.id,
+          question: cleanQuestion,
+          answer: aiData.answer,
+          createdAt: aiData.createdAt || new Date().toISOString(),
+        }
+
+        setMessages(current => [newMessage, ...current])
+        setQuestion('')
+        return
+      }
+
+      // If live AI is unavailable, keep MOVA's original guidance working.
+      console.warn(
+        'MOVA AI unavailable; using built-in guidance:',
+        aiError || aiData?.error
+      )
+
+      const fallbackAnswer = createAdvice(
         cleanQuestion,
         dashboard,
         transactions,
@@ -311,30 +340,36 @@ export function AiCoachPanel({ userId, currency }: Props) {
           user_id: userId,
           insight_type: 'coach_question',
           title: 'MOVA Coach',
-          message: `Question: ${cleanQuestion}\n\nAdvice: ${answer}`,
+          message: `Question: ${cleanQuestion}\n\nAdvice: ${fallbackAnswer}`,
           priority: 'normal',
         })
         .select('id, created_at')
         .single()
 
       if (saveError) {
-        throw new Error(`Your advice could not be saved: ${saveError.message}`)
+        throw new Error(
+          `Your guidance could not be saved: ${saveError.message}`
+        )
       }
 
       const newMessage: CoachMessage = {
         id: data.id,
         question: cleanQuestion,
-        answer,
+        answer: fallbackAnswer,
         createdAt: data.created_at,
       }
 
       setMessages(current => [newMessage, ...current])
       setQuestion('')
+      setUsingFallback(true)
+      setNotice(
+        'The live AI service was unavailable, so MOVA used its built-in guidance instead.'
+      )
     } catch (err) {
       setNotice(
         err instanceof Error
           ? err.message
-          : 'MOVA could not prepare your advice.'
+          : 'MOVA could not prepare your guidance.'
       )
     } finally {
       setAsking(false)
@@ -374,9 +409,9 @@ export function AiCoachPanel({ userId, currency }: Props) {
               Advice is based on the information you have entered into MOVA.
             </p>
             <p className="mt-2 text-xs text-slate-400">
-              This version uses MOVA's built-in financial guidance rules. It
-              is not a live AI chatbot or a substitute for professional
-              financial advice.
+              MOVA Coach uses AI-powered guidance when available, with
+              built-in financial guidance as a fallback. It is not a
+              substitute for professional financial advice.
             </p>
           </div>
         </CardContent>
@@ -401,7 +436,9 @@ export function AiCoachPanel({ userId, currency }: Props) {
           <CardContent className="flex items-center gap-3 p-4">
             <CreditCard className="text-emerald-200" size={20} />
             <div className="min-w-0">
-              <p className="text-xs text-slate-400">Recorded monthly expenses</p>
+              <p className="text-xs text-slate-400">
+                Recorded monthly expenses
+              </p>
               <p className="mt-1 truncate font-semibold">
                 {loading || !dashboard
                   ? '—'
@@ -415,7 +452,9 @@ export function AiCoachPanel({ userId, currency }: Props) {
           <CardContent className="flex items-center gap-3 p-4">
             <Target className="text-emerald-200" size={20} />
             <div className="min-w-0">
-              <p className="text-xs text-slate-400">Active financial goals</p>
+              <p className="text-xs text-slate-400">
+                Active financial goals
+              </p>
               <p className="mt-1 font-semibold">
                 {loading || !dashboard ? '—' : dashboard.goals.length}
               </p>
@@ -427,7 +466,9 @@ export function AiCoachPanel({ userId, currency }: Props) {
           <CardContent className="flex items-center gap-3 p-4">
             <TrendingUp className="text-emerald-200" size={20} />
             <div className="min-w-0">
-              <p className="text-xs text-slate-400">Recorded transactions</p>
+              <p className="text-xs text-slate-400">
+                Recorded transactions
+              </p>
               <p className="mt-1 font-semibold">
                 {loading ? '—' : transactions.length}
               </p>
@@ -482,8 +523,17 @@ export function AiCoachPanel({ userId, currency }: Props) {
           </div>
 
           {notice && (
-            <p role="status" className="rounded-xl border border-white/10 bg-white/[.03] p-3 text-xs text-slate-300">
+            <p
+              role="status"
+              className="rounded-xl border border-white/10 bg-white/[.03] p-3 text-xs text-slate-300"
+            >
               {notice}
+            </p>
+          )}
+
+          {usingFallback && (
+            <p className="text-xs text-amber-300">
+              Built-in guidance was used for this answer.
             </p>
           )}
         </CardContent>
@@ -543,8 +593,13 @@ export function AiCoachPanel({ userId, currency }: Props) {
         {messages.length === 0 ? (
           <Card>
             <CardContent className="p-6 text-center">
-              <MessageCircle className="mx-auto text-slate-500" size={24} />
-              <p className="mt-3 text-sm font-medium">No conversations yet</p>
+              <MessageCircle
+                className="mx-auto text-slate-500"
+                size={24}
+              />
+              <p className="mt-3 text-sm font-medium">
+                No conversations yet
+              </p>
               <p className="mt-1 text-xs text-slate-500">
                 Your saved Coach questions and guidance will appear here.
               </p>
