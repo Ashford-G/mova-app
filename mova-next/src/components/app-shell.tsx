@@ -29,6 +29,8 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 
+import { isSupabaseConfigured, supabase } from '@/lib/supabase'
+
 import {
   loadDashboardData,
   loadTransactions,
@@ -65,10 +67,26 @@ const descriptions: Record<string, string> = {
   Transactions: 'A single view of money moving in and out.',
   Goals: 'Give your next milestone a clear plan.',
   Debts: 'Understand and manage what you owe.',
-  'MOVA Safe': 'Your financial safety space.',
+  'MOVA Safe': 'Make more confident purchase decisions.',
   'MOVA Price': 'Make more informed price decisions.',
   'AI Coach': 'A thinking partner for your money decisions.',
   Profile: 'Your account and preferences.',
+}
+
+type SafeAssessment = {
+  id: string
+  itemName: string
+  purchasePrice: number
+  availableMoney: number
+  essentialExpenses: number
+  upcomingObligations: number
+  savingsCommitments: number
+  spendableMoney: number
+  remainingAfterPurchase: number
+  riskLevel: 'affordable' | 'be_careful' | 'not_affordable'
+  riskScore: number
+  explanation: string
+  createdAt: string
 }
 
 function formatMoney(amount: number, currency: string) {
@@ -80,6 +98,84 @@ function formatMoney(amount: number, currency: string) {
     }).format(amount)
   } catch {
     return `${currency} ${amount.toFixed(2)}`
+  }
+}
+
+function getSafeDecision(
+  purchasePrice: number,
+  availableMoney: number,
+  essentialExpenses: number,
+  upcomingObligations: number,
+  savingsCommitments: number
+) {
+  const totalCommitments =
+    essentialExpenses + upcomingObligations + savingsCommitments
+
+  const spendableMoney = availableMoney - totalCommitments
+  const remainingAfterPurchase = spendableMoney - purchasePrice
+
+  let riskLevel: SafeAssessment['riskLevel']
+  let riskScore: number
+  let explanation: string
+
+  if (spendableMoney < 0 || purchasePrice > spendableMoney) {
+    riskLevel = 'not_affordable'
+    riskScore = 90
+
+    explanation =
+      spendableMoney < 0
+        ? 'Your available money does not cover the commitments you entered. Protect those commitments before making this purchase.'
+        : 'This purchase would use money already needed for your essential expenses, upcoming obligations or savings commitments.'
+  } else if (
+    remainingAfterPurchase < Math.max(availableMoney * 0.1, 0.01)
+  ) {
+    riskLevel = 'be_careful'
+    riskScore = 55
+
+    explanation =
+      'You can cover this purchase based on the figures entered, but it would leave you with a small cash buffer. Consider waiting or choosing a cheaper option.'
+  } else {
+    riskLevel = 'affordable'
+    riskScore = 15
+
+    explanation =
+      'Based on the figures you entered, this purchase fits after your listed commitments and leaves at least a 10% buffer of your available money.'
+  }
+
+  return {
+    spendableMoney,
+    remainingAfterPurchase,
+    riskLevel,
+    riskScore,
+    explanation,
+  }
+}
+
+function mapSafeAssessment(row: any): SafeAssessment {
+  let submitted: any = {}
+
+  try {
+    submitted = JSON.parse(row.submitted_value || '{}')
+  } catch {
+    submitted = {}
+  }
+
+  return {
+    id: row.id,
+    itemName: submitted.itemName || 'Purchase assessment',
+    purchasePrice: Number(submitted.purchasePrice ?? 0),
+    availableMoney: Number(submitted.availableMoney ?? 0),
+    essentialExpenses: Number(submitted.essentialExpenses ?? 0),
+    upcomingObligations: Number(submitted.upcomingObligations ?? 0),
+    savingsCommitments: Number(submitted.savingsCommitments ?? 0),
+    spendableMoney: Number(submitted.spendableMoney ?? 0),
+    remainingAfterPurchase: Number(
+      submitted.remainingAfterPurchase ?? 0
+    ),
+    riskLevel: row.risk_level,
+    riskScore: Number(row.risk_score ?? 0),
+    explanation: row.explanation || '',
+    createdAt: row.created_at,
   }
 }
 
@@ -138,6 +234,20 @@ export function AppShell({
   const [debtDueDate, setDebtDueDate] = useState('')
   const [debtBalanceInputs, setDebtBalanceInputs] = useState<Record<string, string>>({})
   const [debtUpdating, setDebtUpdating] = useState<string | null>(null)
+
+  // MOVA SAFE
+  const [safeItemName, setSafeItemName] = useState('')
+  const [safePurchasePrice, setSafePurchasePrice] = useState('')
+  const [safeAvailableMoney, setSafeAvailableMoney] = useState('')
+  const [safeEssentialExpenses, setSafeEssentialExpenses] = useState('0')
+  const [safeUpcomingObligations, setSafeUpcomingObligations] = useState('0')
+  const [safeSavingsCommitments, setSafeSavingsCommitments] = useState('0')
+  const [safeSaving, setSafeSaving] = useState(false)
+  const [safeLoading, setSafeLoading] = useState(false)
+  const [safeMessage, setSafeMessage] = useState('')
+  const [safeHistory, setSafeHistory] = useState<SafeAssessment[]>([])
+  const [latestSafeAssessment, setLatestSafeAssessment] =
+    useState<SafeAssessment | null>(null)
 
   const groups = ['WORKSPACE', 'MONEY', 'PERSONAL']
 
@@ -263,6 +373,56 @@ export function AppShell({
 
     fetchDebts()
     return () => { cancelled = true }
+  }, [active, userId])
+
+  useEffect(() => {
+    if (active !== 'MOVA Safe') return
+
+    let cancelled = false
+
+    async function fetchSafeHistory() {
+      if (!supabase || !isSupabaseConfigured) {
+        setSafeMessage('MOVA is not connected to Supabase.')
+        return
+      }
+
+      setSafeLoading(true)
+      setSafeMessage('')
+
+      try {
+        const { data, error } = await supabase
+          .from('safe_checks')
+          .select(
+            'id, check_type, submitted_value, risk_level, risk_score, explanation, created_at'
+          )
+          .eq('user_id', userId)
+          .eq('check_type', 'purchase_affordability')
+          .order('created_at', { ascending: false })
+          .limit(10)
+
+        if (error) throw error
+
+        if (!cancelled) {
+          setSafeHistory((data ?? []).map(mapSafeAssessment))
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setSafeMessage(
+            error instanceof Error
+              ? error.message
+              : 'Could not load your previous assessments.'
+          )
+        }
+      } finally {
+        if (!cancelled) setSafeLoading(false)
+      }
+    }
+
+    fetchSafeHistory()
+
+    return () => {
+      cancelled = true
+    }
   }, [active, userId])
 
   async function refreshDashboard() {
@@ -449,6 +609,98 @@ export function AppShell({
       )
     } finally {
       setDebtUpdating(null)
+    }
+  }
+
+  async function handleSafeAssessment(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (safeSaving) return
+
+    if (!supabase || !isSupabaseConfigured) {
+      setSafeMessage('MOVA is not connected to Supabase.')
+      return
+    }
+
+    const purchasePrice = Number(safePurchasePrice)
+    const availableMoney = Number(safeAvailableMoney)
+    const essentialExpenses = Number(safeEssentialExpenses)
+    const upcomingObligations = Number(safeUpcomingObligations)
+    const savingsCommitments = Number(safeSavingsCommitments)
+
+    const amounts = [
+      purchasePrice,
+      availableMoney,
+      essentialExpenses,
+      upcomingObligations,
+      savingsCommitments,
+    ]
+
+    if (
+      !safeItemName.trim() ||
+      amounts.some(amount => !Number.isFinite(amount) || amount < 0) ||
+      purchasePrice <= 0 ||
+      availableMoney <= 0
+    ) {
+      setSafeMessage(
+        'Enter a purchase name, a purchase price greater than zero, available money greater than zero, and valid commitment amounts.'
+      )
+      return
+    }
+
+    setSafeSaving(true)
+    setSafeMessage('')
+
+    try {
+      const decision = getSafeDecision(
+        purchasePrice,
+        availableMoney,
+        essentialExpenses,
+        upcomingObligations,
+        savingsCommitments
+      )
+
+      const submitted = {
+        itemName: safeItemName.trim(),
+        purchasePrice,
+        availableMoney,
+        essentialExpenses,
+        upcomingObligations,
+        savingsCommitments,
+        spendableMoney: decision.spendableMoney,
+        remainingAfterPurchase: decision.remainingAfterPurchase,
+      }
+
+      const { data, error } = await supabase
+        .from('safe_checks')
+        .insert({
+          user_id: userId,
+          check_type: 'purchase_affordability',
+          submitted_value: JSON.stringify(submitted),
+          risk_level: decision.riskLevel,
+          risk_score: decision.riskScore,
+          explanation: decision.explanation,
+        })
+        .select(
+          'id, check_type, submitted_value, risk_level, risk_score, explanation, created_at'
+        )
+        .single()
+
+      if (error) throw error
+
+      const assessment = mapSafeAssessment(data)
+
+      setLatestSafeAssessment(assessment)
+      setSafeHistory(current => [assessment, ...current].slice(0, 10))
+      setSafeMessage('Your assessment has been saved.')
+
+    } catch (error) {
+      setSafeMessage(
+        error instanceof Error
+          ? `Could not save assessment: ${error.message}`
+          : 'Could not save your assessment.'
+      )
+    } finally {
+      setSafeSaving(false)
     }
   }
 
@@ -1212,6 +1464,238 @@ export function AppShell({
                   </div>
                 )}
               </div>
+            </div>
+          ) : active === 'MOVA Safe' ? (
+            <div className="space-y-6">
+              <div>
+                <div className="flex items-center gap-2 text-emerald-200">
+                  <ShieldCheck size={18} />
+                  <span className="text-xs font-semibold tracking-wider">PURCHASE AFFORDABILITY</span>
+                </div>
+                <h1 className="mt-2 text-2xl font-semibold md:text-3xl">
+                  Can I afford this?
+                </h1>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
+                  Check a purchase against the money you have available and the commitments you need to protect.
+                </p>
+              </div>
+
+              <Card className="border-emerald-300/15 bg-gradient-to-br from-[#142c36] to-[#111b2b]">
+                <CardContent className="p-5 md:p-7">
+                  <form onSubmit={handleSafeAssessment} className="space-y-5">
+                    <div>
+                      <label className="mb-2 block text-xs font-medium text-slate-300">
+                        What do you want to buy?
+                      </label>
+                      <input
+                        required
+                        value={safeItemName}
+                        onChange={event => setSafeItemName(event.target.value)}
+                        placeholder="e.g. A new phone"
+                        className="w-full rounded-xl border border-white/10 bg-[#0b1422] px-4 py-3 text-sm text-white outline-none focus:border-emerald-300/50"
+                      />
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <label className="mb-2 block text-xs text-slate-400">
+                          Purchase price ({currency})
+                        </label>
+                        <input
+                          required
+                          type="number"
+                          min="0.01"
+                          step="0.01"
+                          value={safePurchasePrice}
+                          onChange={event => setSafePurchasePrice(event.target.value)}
+                          placeholder="0.00"
+                          className="w-full rounded-xl border border-white/10 bg-[#0b1422] px-4 py-3 text-sm text-white outline-none focus:border-emerald-300/50"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-2 block text-xs text-slate-400">
+                          Money available right now ({currency})
+                        </label>
+                        <input
+                          required
+                          type="number"
+                          min="0.01"
+                          step="0.01"
+                          value={safeAvailableMoney}
+                          onChange={event => setSafeAvailableMoney(event.target.value)}
+                          placeholder="0.00"
+                          className="w-full rounded-xl border border-white/10 bg-[#0b1422] px-4 py-3 text-sm text-white outline-none focus:border-emerald-300/50"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="border-t border-white/[.08] pt-5">
+                      <h2 className="text-sm font-semibold">Protect your commitments</h2>
+                      <p className="mt-1 text-xs leading-5 text-slate-500">
+                        Enter the amounts you still need to keep aside. Use zero only when you have no commitment in that category.
+                      </p>
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <label className="mb-2 block text-xs text-slate-400">
+                          Essential expenses ({currency})
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          required
+                          value={safeEssentialExpenses}
+                          onChange={event => setSafeEssentialExpenses(event.target.value)}
+                          placeholder="0.00"
+                          className="w-full rounded-xl border border-white/10 bg-[#0b1422] px-4 py-3 text-sm text-white outline-none focus:border-emerald-300/50"
+                        />
+                        <p className="mt-1 text-[10px] text-slate-500">Food, rent, transport, utilities, etc.</p>
+                      </div>
+
+                      <div>
+                        <label className="mb-2 block text-xs text-slate-400">
+                          Upcoming bills and debt payments ({currency})
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          required
+                          value={safeUpcomingObligations}
+                          onChange={event => setSafeUpcomingObligations(event.target.value)}
+                          placeholder="0.00"
+                          className="w-full rounded-xl border border-white/10 bg-[#0b1422] px-4 py-3 text-sm text-white outline-none focus:border-emerald-300/50"
+                        />
+                        <p className="mt-1 text-[10px] text-slate-500">Payments due before your next income.</p>
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="mb-2 block text-xs text-slate-400">
+                          Savings commitments ({currency})
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          required
+                          value={safeSavingsCommitments}
+                          onChange={event => setSafeSavingsCommitments(event.target.value)}
+                          placeholder="0.00"
+                          className="w-full rounded-xl border border-white/10 bg-[#0b1422] px-4 py-3 text-sm text-white outline-none focus:border-emerald-300/50"
+                        />
+                        <p className="mt-1 text-[10px] text-slate-500">Money you have already committed to savings goals.</p>
+                      </div>
+                    </div>
+
+                    <Button type="submit" disabled={safeSaving} className="w-full">
+                      {safeSaving ? 'Checking your purchase...' : 'Check affordability'}
+                    </Button>
+                  </form>
+
+                  {safeMessage && (
+                    <p role="status" className="mt-4 text-xs leading-5 text-slate-300">
+                      {safeMessage}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+
+              {latestSafeAssessment && (
+                <Card className={
+                  latestSafeAssessment.riskLevel === 'affordable'
+                    ? 'border-emerald-300/25'
+                    : latestSafeAssessment.riskLevel === 'be_careful'
+                      ? 'border-amber-300/25'
+                      : 'border-rose-300/25'
+                }>
+                  <CardContent className="p-5 md:p-7">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs text-slate-500">YOUR PURCHASE ASSESSMENT</p>
+                        <h2 className="mt-2 text-xl font-semibold">{latestSafeAssessment.itemName}</h2>
+                      </div>
+                      <Badge>
+                        {latestSafeAssessment.riskLevel === 'affordable'
+                          ? 'Affordable'
+                          : latestSafeAssessment.riskLevel === 'be_careful'
+                            ? 'Be careful'
+                            : 'Not affordable right now'}
+                      </Badge>
+                    </div>
+
+                    <p className="mt-4 text-sm leading-6 text-slate-300">
+                      {latestSafeAssessment.explanation}
+                    </p>
+
+                    <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                      <div className="rounded-xl bg-white/[.03] p-4">
+                        <p className="text-xs text-slate-500">Money available after commitments</p>
+                        <p className="mt-2 text-xl font-semibold">
+                          {formatMoney(latestSafeAssessment.spendableMoney, currency)}
+                        </p>
+                      </div>
+                      <div className="rounded-xl bg-white/[.03] p-4">
+                        <p className="text-xs text-slate-500">Money left after purchase</p>
+                        <p className="mt-2 text-xl font-semibold">
+                          {formatMoney(latestSafeAssessment.remainingAfterPurchase, currency)}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Previous assessments</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {safeLoading ? (
+                    <p className="py-8 text-center text-sm text-slate-500">
+                      Loading your assessment history...
+                    </p>
+                  ) : safeHistory.length === 0 ? (
+                    <div className="py-8 text-center">
+                      <ShieldCheck className="mx-auto mb-3 text-slate-500" size={28} />
+                      <p className="text-sm font-medium text-slate-300">
+                        No purchase assessments yet
+                      </p>
+                      <p className="mt-2 text-xs text-slate-500">
+                        Your saved purchase decisions will appear here.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {safeHistory.map(assessment => (
+                        <div
+                          key={assessment.id}
+                          className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/[.07] p-4"
+                        >
+                          <div>
+                            <p className="text-sm font-medium">{assessment.itemName}</p>
+                            <p className="mt-1 text-xs text-slate-500">
+                              {formatMoney(assessment.purchasePrice, currency)} · {new Date(assessment.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <Badge>
+                            {assessment.riskLevel === 'affordable'
+                              ? 'Affordable'
+                              : assessment.riskLevel === 'be_careful'
+                                ? 'Be careful'
+                                : 'Not affordable'}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <p className="text-[11px] leading-5 text-slate-500">
+                MOVA Safe is a decision-support calculation, not a guarantee of financial safety. Its result depends on the accuracy and completeness of the amounts you enter. The 10% buffer is a simple MOVA rule, not a universal financial standard.
+              </p>
             </div>
           ) : (
             <Card>
