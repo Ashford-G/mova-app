@@ -403,7 +403,8 @@ export function AppShell({
             'id, check_type, submitted_value, risk_level, risk_score, explanation, created_at'
           )
           .eq('user_id', userId)
-          .eq('check_type', 'purchase_affordability')
+          // The database allows "payment", not "purchase_affordability".
+          .eq('check_type', 'payment')
           .order('created_at', { ascending: false })
           .limit(10)
 
@@ -617,7 +618,7 @@ export function AppShell({
     }
   }
 
-  // CORRECTED MOVA SAFE SAVE FUNCTION
+  // MOVA SAFE SAVE FUNCTION
   async function handleSafeAssessment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (safeSaving) return
@@ -676,13 +677,12 @@ export function AppShell({
         remainingAfterPurchase: decision.remainingAfterPurchase,
       }
 
-      // Save without .select() or .single().
-      // This avoids requiring SELECT permission just to complete an INSERT.
       const { error } = await supabase
         .from('safe_checks')
         .insert({
           user_id: userId,
-          check_type: 'purchase_affordability',
+          // The database CHECK constraint permits "payment".
+          check_type: 'payment',
           submitted_value: JSON.stringify(submitted),
           risk_level: decision.riskLevel,
           risk_score: decision.riskScore,
@@ -694,7 +694,6 @@ export function AppShell({
         throw error
       }
 
-      // Build the displayed assessment locally after Supabase confirms the insert.
       const assessment: SafeAssessment = {
         id: `local-${Date.now()}`,
         ...submitted,
