@@ -91,6 +91,27 @@ export type DashboardData = {
   debts: Debt[]
 }
 
+export type PriceReport = {
+  id: string
+  productName: string
+  category: string
+  merchantName: string
+  price: number
+  currency: string
+  location: string | null
+  verified: boolean
+  reportedAt: string
+}
+
+export type PriceReportInput = {
+  productName: string
+  category: string
+  merchantName: string
+  price: number
+  currency: string
+  location: string
+}
+
 export const migrationStatus = {
   connectedToExistingProject: isSupabaseConfigured,
   schemaVerified: true,
@@ -244,7 +265,6 @@ export function calculateSafeCheck(
   const moneyAfterPurchase =
     moneyAfterCommitments - input.purchasePrice
 
-  // MOVA keeps a suggested 10% buffer of available money.
   const safetyBuffer = input.availableMoney * 0.1
 
   let status: SafeCheckResult['status']
@@ -297,8 +317,6 @@ export async function createSafeCheck(
 
   const result = calculateSafeCheck(input)
 
-  // The existing submitted_value column is TEXT.
-  // Store the complete assessment as JSON text.
   const submittedValue = JSON.stringify({
     purchaseName: input.purchaseName.trim(),
     purchasePrice: input.purchasePrice,
@@ -630,6 +648,112 @@ export async function updateDebtBalance(
   }
 
   return mapDebt(data)
+}
+
+/* ============================================================
+   MOVA PRICE
+   Community-reported prices using the existing price_reports table.
+   These are reports from users, not live or guaranteed prices.
+   ============================================================ */
+
+function mapPriceReport(row: any): PriceReport {
+  return {
+    id: row.id,
+    productName: row.product_name,
+    category: row.product_category || 'Other',
+    merchantName: row.merchant_name || 'Seller not specified',
+    price: Number(row.price),
+    currency: row.currency || 'USD',
+    location: row.location || null,
+    verified: Boolean(row.verified),
+    reportedAt: row.reported_at,
+  }
+}
+
+export async function loadPriceReports(
+  userId: string,
+  searchTerm = ''
+): Promise<PriceReport[]> {
+  const client = requireConnection(userId)
+
+  let query = client
+    .from('price_reports')
+    .select(
+      'id, user_id, product_name, merchant_name, location, price, currency, product_category, verified, reported_at'
+    )
+    .order('reported_at', { ascending: false })
+    .limit(100)
+
+  const cleanedSearch = searchTerm.trim()
+
+  if (cleanedSearch) {
+    query = query.ilike('product_name', `%${cleanedSearch}%`)
+  }
+
+  const { data, error } = await query
+
+  if (error) {
+    throw new Error(`Could not load MOVA Price reports: ${error.message}`)
+  }
+
+  return (data ?? []).map(mapPriceReport)
+}
+
+export async function createPriceReport(
+  userId: string,
+  input: PriceReportInput
+): Promise<PriceReport> {
+  const client = requireConnection(userId)
+
+  const productName = input.productName.trim()
+  const category = input.category.trim()
+  const merchantName = input.merchantName.trim()
+  const currency = input.currency.trim().toUpperCase()
+  const location = input.location.trim()
+
+  if (!productName) {
+    throw new Error('Enter the product name.')
+  }
+
+  if (!category) {
+    throw new Error('Choose a product category.')
+  }
+
+  if (!merchantName) {
+    throw new Error('Enter the shop or seller name.')
+  }
+
+  if (!Number.isFinite(input.price) || input.price <= 0) {
+    throw new Error('Enter a price greater than zero.')
+  }
+
+  if (!/^[A-Z]{3}$/.test(currency)) {
+    throw new Error(
+      'Enter a valid three-letter currency code, such as USD or ZAR.'
+    )
+  }
+
+  const { data, error } = await client
+    .from('price_reports')
+    .insert({
+      user_id: userId,
+      product_name: productName,
+      product_category: category,
+      merchant_name: merchantName,
+      location: location || null,
+      price: input.price,
+      currency,
+    })
+    .select(
+      'id, user_id, product_name, merchant_name, location, price, currency, product_category, verified, reported_at'
+    )
+    .single()
+
+  if (error) {
+    throw new Error(`Could not submit price report: ${error.message}`)
+  }
+
+  return mapPriceReport(data)
 }
 
 /* ============================================================
