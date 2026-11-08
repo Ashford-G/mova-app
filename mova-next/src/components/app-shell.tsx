@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import {
@@ -179,6 +178,18 @@ function mapSafeAssessment(row: any): SafeAssessment {
   }
 }
 
+function getErrorMessage(error: unknown): string {
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error
+  ) {
+    return String(error.message)
+  }
+
+  return String(error)
+}
+
 export function AppShell({
   email,
   userId,
@@ -263,11 +274,7 @@ export function AppShell({
         if (activeRequest) setDashboard(result)
       } catch (error) {
         if (activeRequest) {
-          setDataError(
-            error instanceof Error
-              ? error.message
-              : 'Unable to load your financial data.'
-          )
+          setDataError(getErrorMessage(error) || 'Unable to load your financial data.')
         }
       } finally {
         if (activeRequest) setLoading(false)
@@ -296,7 +303,7 @@ export function AppShell({
       } catch (error) {
         if (!cancelled) {
           setTransactionMessage(
-            error instanceof Error ? error.message : 'Could not load transactions.'
+            getErrorMessage(error) || 'Could not load transactions.'
           )
         }
       } finally {
@@ -328,7 +335,7 @@ export function AppShell({
       } catch (error) {
         if (!cancelled) {
           setGoalMessage(
-            error instanceof Error ? error.message : 'Could not load goals.'
+            getErrorMessage(error) || 'Could not load goals.'
           )
         }
       } finally {
@@ -363,7 +370,7 @@ export function AppShell({
       } catch (error) {
         if (!cancelled) {
           setDebtMessage(
-            error instanceof Error ? error.message : 'Could not load debts.'
+            getErrorMessage(error) || 'Could not load debts.'
           )
         }
       } finally {
@@ -408,9 +415,7 @@ export function AppShell({
       } catch (error) {
         if (!cancelled) {
           setSafeMessage(
-            error instanceof Error
-              ? error.message
-              : 'Could not load your previous assessments.'
+            `Could not load previous assessments: ${getErrorMessage(error)}`
           )
         }
       } finally {
@@ -460,7 +465,7 @@ export function AppShell({
       setTransactionMessage('Transaction saved successfully.')
     } catch (error) {
       setTransactionMessage(
-        error instanceof Error ? error.message : 'Could not save transaction.'
+        getErrorMessage(error) || 'Could not save transaction.'
       )
     } finally {
       setTransactionSaving(false)
@@ -495,7 +500,7 @@ export function AppShell({
       await refreshDashboard()
     } catch (error) {
       setGoalMessage(
-        error instanceof Error ? error.message : 'Could not create your goal.'
+        getErrorMessage(error) || 'Could not create your goal.'
       )
     } finally {
       setGoalSaving(false)
@@ -527,7 +532,7 @@ export function AppShell({
       await refreshDashboard()
     } catch (error) {
       setGoalMessage(
-        error instanceof Error ? error.message : 'Could not update goal progress.'
+        getErrorMessage(error) || 'Could not update goal progress.'
       )
     } finally {
       setProgressSaving(null)
@@ -568,7 +573,7 @@ export function AppShell({
       await refreshDashboard()
     } catch (error) {
       setDebtMessage(
-        error instanceof Error ? error.message : 'Could not create debt record.'
+        getErrorMessage(error) || 'Could not create debt record.'
       )
     } finally {
       setDebtSaving(false)
@@ -605,13 +610,14 @@ export function AppShell({
       await refreshDashboard()
     } catch (error) {
       setDebtMessage(
-        error instanceof Error ? error.message : 'Could not update debt balance.'
+        getErrorMessage(error) || 'Could not update debt balance.'
       )
     } finally {
       setDebtUpdating(null)
     }
   }
 
+  // CORRECTED MOVA SAFE SAVE FUNCTION
   async function handleSafeAssessment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (safeSaving) return
@@ -670,7 +676,9 @@ export function AppShell({
         remainingAfterPurchase: decision.remainingAfterPurchase,
       }
 
-      const { data, error } = await supabase
+      // Save without .select() or .single().
+      // This avoids requiring SELECT permission just to complete an INSERT.
+      const { error } = await supabase
         .from('safe_checks')
         .insert({
           user_id: userId,
@@ -680,24 +688,35 @@ export function AppShell({
           risk_score: decision.riskScore,
           explanation: decision.explanation,
         })
-        .select(
-          'id, check_type, submitted_value, risk_level, risk_score, explanation, created_at'
-        )
-        .single()
 
-      if (error) throw error
+      if (error) {
+        console.error('MOVA Safe database insert error:', error)
+        throw error
+      }
 
-      const assessment = mapSafeAssessment(data)
+      // Build the displayed assessment locally after Supabase confirms the insert.
+      const assessment: SafeAssessment = {
+        id: `local-${Date.now()}`,
+        ...submitted,
+        riskLevel: decision.riskLevel,
+        riskScore: decision.riskScore,
+        explanation: decision.explanation,
+        createdAt: new Date().toISOString(),
+      }
 
       setLatestSafeAssessment(assessment)
-      setSafeHistory(current => [assessment, ...current].slice(0, 10))
-      setSafeMessage('Your assessment has been saved.')
 
-    } catch (error) {
+      setSafeHistory(current =>
+        [assessment, ...current].slice(0, 10)
+      )
+
+      setSafeMessage('Your assessment has been saved successfully.')
+
+    } catch (error: unknown) {
+      console.error('MOVA Safe save error:', error)
+
       setSafeMessage(
-        error instanceof Error
-          ? `Could not save assessment: ${error.message}`
-          : 'Could not save your assessment.'
+        `Could not save assessment: ${getErrorMessage(error)}`
       )
     } finally {
       setSafeSaving(false)
