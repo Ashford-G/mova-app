@@ -1033,6 +1033,12 @@ export function AppShell({
                 </CardContent>
               </Card>
 
+              <MoneyPositionPanel
+  userId={userId}
+  currency={currency}
+  savings={dashboard?.currentSavings ?? 0}
+  debts={dashboard?.debts ?? []}
+/>
               <div className="mt-5 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 {[
                   { label: 'Monthly income', icon: ArrowDownLeft, value: dashboard?.transactionIncome ?? 0 },
