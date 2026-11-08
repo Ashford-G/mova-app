@@ -1,4 +1,3 @@
-
 import { isSupabaseConfigured, supabase } from '@/lib/supabase'
 
 export type Transaction = {
@@ -166,6 +165,43 @@ function requireConnection(userId: string) {
   }
 
   return supabase
+}
+
+/* ============================================================
+   SAVINGS
+   Actual savings balance stored in the financial profile
+   ============================================================ */
+
+export async function updateSavings(
+  userId: string,
+  amount: number
+): Promise<number> {
+  const client = requireConnection(userId)
+
+  if (!Number.isFinite(amount) || amount < 0) {
+    throw new Error('Enter a valid savings amount of zero or more.')
+  }
+
+  const { data, error } = await client
+    .from('financial_profiles')
+    .update({
+      current_savings: amount,
+    })
+    .eq('user_id', userId)
+    .select('current_savings')
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(`Could not update savings: ${error.message}`)
+  }
+
+  if (!data) {
+    throw new Error(
+      'Your financial profile could not be found. Please complete your profile setup before recording savings.'
+    )
+  }
+
+  return Number(data.current_savings ?? amount)
 }
 
 /* ============================================================
