@@ -1,5 +1,4 @@
 
-
 import { isSupabaseConfigured, supabase } from '@/lib/supabase'
 
 export type Transaction = {
@@ -26,6 +25,12 @@ export type Goal = {
   target: number
   deadline: string | null
   status: string
+}
+
+export type GoalInput = {
+  title: string
+  target: number
+  deadline: string | null
 }
 
 export type Debt = {
@@ -87,6 +92,17 @@ function mapTransaction(row: any): Transaction {
         : row.transaction_type === 'transfer'
           ? 'transfer'
           : 'out',
+  }
+}
+
+function mapGoal(row: any): Goal {
+  return {
+    id: row.id,
+    title: row.goal_name,
+    saved: Number(row.current_amount ?? 0),
+    target: Number(row.target_amount),
+    deadline: row.deadline,
+    status: row.status,
   }
 }
 
@@ -163,6 +179,96 @@ export async function loadTransactions(
   return (data ?? []).map(mapTransaction)
 }
 
+export async function loadGoals(userId: string): Promise<Goal[]> {
+  const client = requireConnection(userId)
+
+  const { data, error } = await client
+    .from('goals')
+    .select(
+      'id, goal_name, target_amount, current_amount, deadline, status'
+    )
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    throw new Error(`Could not load goals: ${error.message}`)
+  }
+
+  return (data ?? []).map(mapGoal)
+}
+
+export async function createGoal(
+  userId: string,
+  input: GoalInput
+): Promise<Goal> {
+  const client = requireConnection(userId)
+
+  const title = input.title.trim()
+
+  if (!title) {
+    throw new Error('Please enter a name for your goal.')
+  }
+
+  if (!Number.isFinite(input.target) || input.target <= 0) {
+    throw new Error('Enter a target amount greater than zero.')
+  }
+
+  const { data, error } = await client
+    .from('goals')
+    .insert({
+      user_id: userId,
+      goal_name: title,
+      target_amount: input.target,
+      current_amount: 0,
+      deadline: input.deadline || null,
+      status: 'active',
+    })
+    .select(
+      'id, goal_name, target_amount, current_amount, deadline, status'
+    )
+    .single()
+
+  if (error) {
+    throw new Error(`Could not create goal: ${error.message}`)
+  }
+
+  return mapGoal(data)
+}
+
+export async function updateGoalProgress(
+  userId: string,
+  goalId: string,
+  currentAmount: number
+): Promise<Goal> {
+  const client = requireConnection(userId)
+
+  if (!goalId) {
+    throw new Error('A goal must be selected.')
+  }
+
+  if (!Number.isFinite(currentAmount) || currentAmount < 0) {
+    throw new Error('Enter a valid saved amount.')
+  }
+
+  const { data, error } = await client
+    .from('goals')
+    .update({
+      current_amount: currentAmount,
+    })
+    .eq('id', goalId)
+    .eq('user_id', userId)
+    .select(
+      'id, goal_name, target_amount, current_amount, deadline, status'
+    )
+    .single()
+
+  if (error) {
+    throw new Error(`Could not update goal progress: ${error.message}`)
+  }
+
+  return mapGoal(data)
+}
+
 export async function loadDashboardData(
   userId: string
 ): Promise<DashboardData> {
@@ -184,27 +290,35 @@ export async function loadDashboardData(
 
     client
       .from('transactions')
-      .select('id, amount, transaction_type, category, description, transaction_date')
+      .select(
+        'id, amount, transaction_type, category, description, transaction_date'
+      )
       .eq('user_id', userId)
       .gte('transaction_date', start)
       .lt('transaction_date', end),
 
     client
       .from('transactions')
-      .select('id, amount, transaction_type, category, description, transaction_date')
+      .select(
+        'id, amount, transaction_type, category, description, transaction_date'
+      )
       .eq('user_id', userId)
       .order('transaction_date', { ascending: false })
       .limit(10),
 
     client
       .from('goals')
-      .select('id, goal_name, target_amount, current_amount, deadline, status')
+      .select(
+        'id, goal_name, target_amount, current_amount, deadline, status'
+      )
       .eq('user_id', userId)
       .order('created_at', { ascending: false }),
 
     client
       .from('debts')
-      .select('id, creditor_name, balance, interest_rate, monthly_payment, due_date, status')
+      .select(
+        'id, creditor_name, balance, interest_rate, monthly_payment, due_date, status'
+      )
       .eq('user_id', userId)
       .order('created_at', { ascending: false }),
   ])
@@ -214,11 +328,15 @@ export async function loadDashboardData(
   }
 
   if (monthlyTransactionsResult.error) {
-    throw new Error(`Monthly transactions: ${monthlyTransactionsResult.error.message}`)
+    throw new Error(
+      `Monthly transactions: ${monthlyTransactionsResult.error.message}`
+    )
   }
 
   if (recentTransactionsResult.error) {
-    throw new Error(`Recent transactions: ${recentTransactionsResult.error.message}`)
+    throw new Error(
+      `Recent transactions: ${recentTransactionsResult.error.message}`
+    )
   }
 
   if (goalsResult.error) {
@@ -244,14 +362,7 @@ export async function loadDashboardData(
     recentTransactionsResult.data ?? []
   ).map(mapTransaction)
 
-  const goals: Goal[] = (goalsResult.data ?? []).map(row => ({
-    id: row.id,
-    title: row.goal_name,
-    saved: Number(row.current_amount),
-    target: Number(row.target_amount),
-    deadline: row.deadline,
-    status: row.status,
-  }))
+  const goals: Goal[] = (goalsResult.data ?? []).map(mapGoal)
 
   const debts: Debt[] = (debtsResult.data ?? []).map(row => ({
     id: row.id,
