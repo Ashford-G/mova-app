@@ -43,6 +43,14 @@ export type Debt = {
   status: string
 }
 
+export type DebtInput = {
+  creditor: string
+  balance: number
+  interestRate: number
+  monthlyPayment: number
+  dueDate: string | null
+}
+
 export type DashboardData = {
   currency: string
   monthlyIncome: number
@@ -102,6 +110,18 @@ function mapGoal(row: any): Goal {
     saved: Number(row.current_amount ?? 0),
     target: Number(row.target_amount),
     deadline: row.deadline,
+    status: row.status,
+  }
+}
+
+function mapDebt(row: any): Debt {
+  return {
+    id: row.id,
+    creditor: row.creditor_name,
+    balance: Number(row.balance ?? 0),
+    interestRate: Number(row.interest_rate ?? 0),
+    monthlyPayment: Number(row.monthly_payment ?? 0),
+    dueDate: row.due_date,
     status: row.status,
   }
 }
@@ -269,6 +289,108 @@ export async function updateGoalProgress(
   return mapGoal(data)
 }
 
+export async function loadDebts(userId: string): Promise<Debt[]> {
+  const client = requireConnection(userId)
+
+  const { data, error } = await client
+    .from('debts')
+    .select(
+      'id, creditor_name, balance, interest_rate, monthly_payment, due_date, status'
+    )
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    throw new Error(`Could not load debts: ${error.message}`)
+  }
+
+  return (data ?? []).map(mapDebt)
+}
+
+export async function createDebt(
+  userId: string,
+  input: DebtInput
+): Promise<Debt> {
+  const client = requireConnection(userId)
+
+  const creditor = input.creditor.trim()
+
+  if (!creditor) {
+    throw new Error('Please enter the creditor or lender name.')
+  }
+
+  if (!Number.isFinite(input.balance) || input.balance <= 0) {
+    throw new Error('Enter a valid debt balance greater than zero.')
+  }
+
+  if (!Number.isFinite(input.interestRate) || input.interestRate < 0) {
+    throw new Error('Enter a valid interest rate.')
+  }
+
+  if (
+    !Number.isFinite(input.monthlyPayment) ||
+    input.monthlyPayment < 0
+  ) {
+    throw new Error('Enter a valid monthly repayment amount.')
+  }
+
+  const { data, error } = await client
+    .from('debts')
+    .insert({
+      user_id: userId,
+      creditor_name: creditor,
+      balance: input.balance,
+      interest_rate: input.interestRate,
+      monthly_payment: input.monthlyPayment,
+      due_date: input.dueDate || null,
+      status: 'active',
+    })
+    .select(
+      'id, creditor_name, balance, interest_rate, monthly_payment, due_date, status'
+    )
+    .single()
+
+  if (error) {
+    throw new Error(`Could not create debt: ${error.message}`)
+  }
+
+  return mapDebt(data)
+}
+
+export async function updateDebtBalance(
+  userId: string,
+  debtId: string,
+  newBalance: number
+): Promise<Debt> {
+  const client = requireConnection(userId)
+
+  if (!debtId) {
+    throw new Error('A debt must be selected.')
+  }
+
+  if (!Number.isFinite(newBalance) || newBalance < 0) {
+    throw new Error('Enter a valid outstanding balance.')
+  }
+
+  const { data, error } = await client
+    .from('debts')
+    .update({
+      balance: newBalance,
+    })
+    .eq('id', debtId)
+    .eq('user_id', userId)
+    .select(
+      'id, creditor_name, balance, interest_rate, monthly_payment, due_date, status'
+    )
+    .single()
+
+  if (error) {
+    throw new Error(`Could not update debt balance: ${error.message}`)
+  }
+
+  return mapDebt(data)
+}
+
 export async function loadDashboardData(
   userId: string
 ): Promise<DashboardData> {
@@ -363,16 +485,7 @@ export async function loadDashboardData(
   ).map(mapTransaction)
 
   const goals: Goal[] = (goalsResult.data ?? []).map(mapGoal)
-
-  const debts: Debt[] = (debtsResult.data ?? []).map(row => ({
-    id: row.id,
-    creditor: row.creditor_name,
-    balance: Number(row.balance),
-    interestRate: Number(row.interest_rate),
-    monthlyPayment: Number(row.monthly_payment),
-    dueDate: row.due_date,
-    status: row.status,
-  }))
+  const debts: Debt[] = (debtsResult.data ?? []).map(mapDebt)
 
   return {
     currency: profile?.currency || 'USD',
