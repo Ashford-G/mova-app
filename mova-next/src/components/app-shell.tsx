@@ -29,6 +29,8 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 
+import { IntelligencePanel } from '@/components/intelligence-panel'
+
 import { isSupabaseConfigured, supabase } from '@/lib/supabase'
 
 import {
@@ -160,7 +162,6 @@ function mapSafeAssessment(row: any): SafeAssessment {
     submitted = {}
   }
 
-  // Convert any older assessment labels into the database risk levels.
   const storedRiskLevel = String(row.risk_level || 'unknown')
 
   const riskLevel: SafeAssessment['riskLevel'] =
@@ -702,7 +703,6 @@ export function AppShell({
         remainingAfterPurchase: decision.remainingAfterPurchase,
       }
 
-      // Save using the database-approved purchase_affordability category.
       const { error } = await supabase
         .from('safe_checks')
         .insert({
@@ -1074,6 +1074,14 @@ export function AppShell({
                 </Card>
               </div>
             </>
+          ) : active === 'Intelligence' ? (
+            <IntelligencePanel
+              userId={userId}
+              currency={currency}
+              currentSavings={dashboard?.currentSavings ?? 0}
+              debts={dashboard?.debts ?? []}
+              goals={dashboard?.goals ?? []}
+            />
           ) : active === 'Transactions' ? (
             <div className="space-y-6">
               <div>
