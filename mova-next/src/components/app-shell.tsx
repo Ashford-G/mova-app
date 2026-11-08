@@ -831,8 +831,8 @@ export function AppShell({
   })
 
   const sidebar = (
-    <aside className="flex h-full flex-col border-r border-white/[.07] bg-[#0b1422]">
-      <div className="flex h-[76px] items-center gap-3 border-b border-white/[.07] px-6">
+    <aside className="flex h-full min-h-0 flex-col border-r border-white/[.07] bg-[#0b1422]">
+      <div className="flex h-[76px] shrink-0 items-center gap-3 border-b border-white/[.07] px-6">
         <div className="grid h-9 w-9 place-items-center rounded-xl bg-emerald-300 text-slate-950">
           <Wallet size={19} />
         </div>
@@ -842,7 +842,7 @@ export function AppShell({
         </div>
       </div>
 
-      <div className="px-4 py-6">
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6">
         {groups.map(group => (
           <div key={group} className="mb-6">
             <p className="mb-2 px-3 text-[9px] font-semibold tracking-[.2em] text-slate-600">
@@ -874,7 +874,7 @@ export function AppShell({
         ))}
       </div>
 
-      <div className="mt-auto p-4">
+      <div className="mt-auto shrink-0 p-4">
         <div className="rounded-2xl border border-emerald-300/15 bg-emerald-300/[.06] p-4">
           <div className="flex items-center gap-2 text-emerald-200">
             <Sparkles size={15} />
