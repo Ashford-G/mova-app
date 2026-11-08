@@ -1,5 +1,6 @@
 
 import { useEffect, useState } from 'react'
+import type { FormEvent } from 'react'
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -30,7 +31,11 @@ import {
 
 import {
   loadDashboardData,
+  loadTransactions,
+  createTransaction,
   type DashboardData,
+  type Transaction,
+  type TransactionInput,
 } from '@/lib/mova-data'
 
 const nav = [
@@ -84,6 +89,29 @@ export function AppShell({
   const [loading, setLoading] = useState(true)
   const [dataError, setDataError] = useState<string | null>(null)
 
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [transactionLoading, setTransactionLoading] = useState(false)
+  const [transactionSaving, setTransactionSaving] = useState(false)
+  const [transactionMessage, setTransactionMessage] = useState('')
+  const [transactionFilter, setTransactionFilter] = useState<
+    'all' | 'income' | 'expense' | 'transfer'
+  >('all')
+
+  const [transactionType, setTransactionType] =
+    useState<TransactionInput['type']>('expense')
+
+  const [transactionAmount, setTransactionAmount] = useState('')
+  const [transactionCategory, setTransactionCategory] = useState('Food')
+  const [transactionDescription, setTransactionDescription] = useState('')
+
+  const [transactionDate, setTransactionDate] = useState(() => {
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const day = String(now.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  })
+
   const groups = ['WORKSPACE', 'MONEY', 'PERSONAL']
 
   useEffect(() => {
@@ -121,6 +149,85 @@ export function AppShell({
     }
   }, [userId])
 
+  useEffect(() => {
+    if (active !== 'Transactions') return
+
+    let cancelled = false
+
+    async function fetchTransactions() {
+      setTransactionLoading(true)
+      setTransactionMessage('')
+
+      try {
+        const result = await loadTransactions(userId)
+
+        if (!cancelled) {
+          setTransactions(result)
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setTransactionMessage(
+            error instanceof Error
+              ? error.message
+              : 'Could not load transactions.'
+          )
+        }
+      } finally {
+        if (!cancelled) {
+          setTransactionLoading(false)
+        }
+      }
+    }
+
+    fetchTransactions()
+
+    return () => {
+      cancelled = true
+    }
+  }, [active, userId])
+
+  async function handleCreateTransaction(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    if (transactionSaving) return
+
+    setTransactionSaving(true)
+    setTransactionMessage('')
+
+    try {
+      await createTransaction(userId, {
+        amount: Number(transactionAmount),
+        type: transactionType,
+        category: transactionCategory,
+        description: transactionDescription,
+        date: transactionDate,
+      })
+
+      const [updatedTransactions, updatedDashboard] = await Promise.all([
+        loadTransactions(userId),
+        loadDashboardData(userId),
+      ])
+
+      setTransactions(updatedTransactions)
+      setDashboard(updatedDashboard)
+
+      setTransactionAmount('')
+      setTransactionDescription('')
+      setTransactionType('expense')
+      setTransactionCategory('Food')
+
+      setTransactionMessage('Transaction saved successfully.')
+    } catch (error) {
+      setTransactionMessage(
+        error instanceof Error
+          ? error.message
+          : 'Could not save transaction.'
+      )
+    } finally {
+      setTransactionSaving(false)
+    }
+  }
+
   const currency = dashboard?.currency || 'USD'
 
   const totalDebt =
@@ -146,12 +253,27 @@ export function AppShell({
       ? Math.min(100, (totalGoalSaved / totalGoalTarget) * 100)
       : 0
 
+  const filteredTransactions = transactions.filter(transaction => {
+    if (transactionFilter === 'all') return true
+
+    if (transactionFilter === 'income') {
+      return transaction.direction === 'in'
+    }
+
+    if (transactionFilter === 'expense') {
+      return transaction.direction === 'out'
+    }
+
+    return transaction.direction === 'transfer'
+  })
+
   const sidebar = (
     <aside className="flex h-full flex-col border-r border-white/[.07] bg-[#0b1422]">
       <div className="flex h-[76px] items-center gap-3 border-b border-white/[.07] px-6">
         <div className="grid h-9 w-9 place-items-center rounded-xl bg-emerald-300 text-slate-950">
           <Wallet size={19} />
         </div>
+
         <div>
           <div className="font-bold tracking-[.2em]">MOVA</div>
           <div className="text-[9px] tracking-[.22em] text-slate-500">
@@ -244,6 +366,7 @@ export function AppShell({
             onClick={() => setMobileOpen(false)}
             className="absolute inset-0 bg-black/70"
           />
+
           <div className="relative h-full w-[280px]">
             {sidebar}
           </div>
@@ -256,7 +379,7 @@ export function AppShell({
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden shrink-0"
+              className="shrink-0 lg:hidden"
               onClick={() => setMobileOpen(true)}
             >
               <Menu size={19} />
@@ -355,6 +478,7 @@ export function AppShell({
                     <div className="flex items-center gap-2 text-xs text-emerald-100/70">
                       <Gauge size={15} />
                       TRUE MONEY POSITION
+
                       <span className="rounded-full bg-white/10 px-2 py-1 text-[9px]">
                         CALCULATION PENDING
                       </span>
@@ -502,6 +626,7 @@ export function AppShell({
                                 <p className="truncate text-sm font-medium text-slate-200">
                                   {transaction.title}
                                 </p>
+
                                 <p className="mt-1 text-[10px] text-slate-500">
                                   {transaction.category} · {transaction.date}
                                 </p>
@@ -517,7 +642,11 @@ export function AppShell({
                                     : 'text-slate-200'
                               }`}
                             >
-                              {transaction.direction === 'in' ? '+' : transaction.direction === 'out' ? '−' : ''}
+                              {transaction.direction === 'in'
+                                ? '+'
+                                : transaction.direction === 'out'
+                                  ? '−'
+                                  : ''}
                               {showBalance
                                 ? formatMoney(transaction.amount, currency)
                                 : '••••'}
@@ -561,6 +690,7 @@ export function AppShell({
                           <p className="text-xs font-medium">
                             Build your financial safety net
                           </p>
+
                           <p className="mt-1 text-xs leading-5 text-slate-500">
                             Your current savings are{' '}
                             {loading
@@ -583,6 +713,7 @@ export function AppShell({
                           <p className="text-xs font-medium">
                             Make informed decisions
                           </p>
+
                           <p className="mt-1 text-xs leading-5 text-slate-500">
                             You have {dashboard?.goals.length ?? 0} savings
                             goals and {dashboard?.debts.length ?? 0} debt
@@ -595,6 +726,206 @@ export function AppShell({
                 </Card>
               </div>
             </>
+          ) : active === 'Transactions' ? (
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-2xl font-semibold">Transactions</h1>
+
+                <p className="mt-2 text-sm text-slate-400">
+                  Record and track your money movements.
+                </p>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>New transaction</CardTitle>
+                </CardHeader>
+
+                <CardContent>
+                  <form onSubmit={handleCreateTransaction} className="space-y-4">
+                    <div className="grid grid-cols-3 gap-2">
+                      {(['income', 'expense', 'transfer'] as const).map(type => (
+                        <button
+                          key={type}
+                          type="button"
+                          onClick={() => setTransactionType(type)}
+                          className={`rounded-xl border px-2 py-3 text-xs font-semibold capitalize transition ${
+                            transactionType === type
+                              ? 'border-emerald-300/40 bg-emerald-300/10 text-emerald-200'
+                              : 'border-white/10 text-slate-400'
+                          }`}
+                        >
+                          {type}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-xs text-slate-400">
+                        Amount ({currency})
+                      </label>
+
+                      <input
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        required
+                        value={transactionAmount}
+                        onChange={event => setTransactionAmount(event.target.value)}
+                        placeholder="0.00"
+                        className="w-full rounded-xl border border-white/10 bg-[#0b1422] px-4 py-3 text-lg text-white outline-none focus:border-emerald-300/50"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-xs text-slate-400">
+                        Category
+                      </label>
+
+                      <select
+                        value={transactionCategory}
+                        onChange={event => setTransactionCategory(event.target.value)}
+                        className="w-full rounded-xl border border-white/10 bg-[#0b1422] px-4 py-3 text-sm text-white outline-none"
+                      >
+                        {[
+                          'Food',
+                          'Transport',
+                          'Housing',
+                          'Utilities',
+                          'Shopping',
+                          'Health',
+                          'Education',
+                          'Salary',
+                          'Business',
+                          'Investment',
+                          'Savings',
+                          'Debt',
+                          'Other',
+                        ].map(category => (
+                          <option key={category} value={category}>
+                            {category}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-xs text-slate-400">
+                        Description
+                      </label>
+
+                      <input
+                        value={transactionDescription}
+                        onChange={event => setTransactionDescription(event.target.value)}
+                        placeholder="What was this transaction for?"
+                        className="w-full rounded-xl border border-white/10 bg-[#0b1422] px-4 py-3 text-sm text-white outline-none focus:border-emerald-300/50"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-xs text-slate-400">
+                        Transaction date
+                      </label>
+
+                      <input
+                        type="date"
+                        required
+                        value={transactionDate}
+                        onChange={event => setTransactionDate(event.target.value)}
+                        className="w-full rounded-xl border border-white/10 bg-[#0b1422] px-4 py-3 text-sm text-white outline-none"
+                      />
+                    </div>
+
+                    <Button
+                      type="submit"
+                      disabled={transactionSaving}
+                      className="w-full"
+                    >
+                      {transactionSaving ? 'Saving...' : 'Save transaction'}
+                    </Button>
+
+                    {transactionMessage && (
+                      <p
+                        role="status"
+                        className="text-xs text-slate-300"
+                      >
+                        {transactionMessage}
+                      </p>
+                    )}
+                  </form>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Transaction history</CardTitle>
+                </CardHeader>
+
+                <CardContent>
+                  <div className="mb-5 flex flex-wrap gap-2">
+                    {(['all', 'income', 'expense', 'transfer'] as const).map(filter => (
+                      <button
+                        key={filter}
+                        onClick={() => setTransactionFilter(filter)}
+                        className={`rounded-full px-3 py-2 text-xs capitalize ${
+                          transactionFilter === filter
+                            ? 'bg-emerald-300/15 text-emerald-200'
+                            : 'bg-white/5 text-slate-400'
+                        }`}
+                      >
+                        {filter}
+                      </button>
+                    ))}
+                  </div>
+
+                  {transactionLoading ? (
+                    <p className="py-10 text-center text-sm text-slate-500">
+                      Loading transactions...
+                    </p>
+                  ) : filteredTransactions.length === 0 ? (
+                    <p className="py-10 text-center text-sm text-slate-500">
+                      No transactions found.
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {filteredTransactions.map(transaction => (
+                        <div
+                          key={transaction.id}
+                          className="flex items-center justify-between gap-3 rounded-xl border border-white/[.06] p-3"
+                        >
+                          <div className="flex min-w-0 items-center gap-3">
+                            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/5 text-slate-300">
+                              {transaction.direction === 'in'
+                                ? <ArrowDownLeft size={17} />
+                                : <ArrowUpRight size={17} />}
+                            </div>
+
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-medium">
+                                {transaction.title}
+                              </p>
+
+                              <p className="mt-1 text-[10px] text-slate-500">
+                                {transaction.category} · {transaction.date}
+                              </p>
+                            </div>
+                          </div>
+
+                          <p className="shrink-0 text-sm font-semibold">
+                            {transaction.direction === 'in'
+                              ? '+'
+                              : transaction.direction === 'out'
+                                ? '−'
+                                : ''}
+                            {formatMoney(transaction.amount, currency)}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           ) : (
             <Card>
               <CardContent className="p-8 md:p-10">
