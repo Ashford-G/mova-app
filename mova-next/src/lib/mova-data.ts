@@ -1,4 +1,5 @@
 
+
 import { isSupabaseConfigured, supabase } from '@/lib/supabase'
 
 export type Transaction = {
@@ -8,6 +9,14 @@ export type Transaction = {
   amount: number
   date: string
   direction: 'in' | 'out' | 'transfer'
+}
+
+export type TransactionInput = {
+  amount: number
+  type: 'income' | 'expense' | 'transfer'
+  category: string
+  description: string
+  date: string
 }
 
 export type Goal = {
@@ -49,7 +58,6 @@ export const migrationStatus = {
 
 function getMonthRange() {
   const now = new Date()
-
   const start = new Date(now.getFullYear(), now.getMonth(), 1)
   const end = new Date(now.getFullYear(), now.getMonth() + 1, 1)
 
@@ -57,7 +65,6 @@ function getMonthRange() {
     const year = date.getFullYear()
     const month = String(date.getMonth() + 1).padStart(2, '0')
     const day = String(date.getDate()).padStart(2, '0')
-
     return `${year}-${month}-${day}`
   }
 
@@ -67,9 +74,23 @@ function getMonthRange() {
   }
 }
 
-export async function loadDashboardData(
-  userId: string
-): Promise<DashboardData> {
+function mapTransaction(row: any): Transaction {
+  return {
+    id: row.id,
+    title: row.description || row.category,
+    category: row.category,
+    amount: Number(row.amount),
+    date: row.transaction_date,
+    direction:
+      row.transaction_type === 'income'
+        ? 'in'
+        : row.transaction_type === 'transfer'
+          ? 'transfer'
+          : 'out',
+  }
+}
+
+function requireConnection(userId: string) {
   if (!supabase || !isSupabaseConfigured) {
     throw new Error('MOVA is not connected to Supabase.')
   }
@@ -78,6 +99,74 @@ export async function loadDashboardData(
     throw new Error('A signed-in user is required.')
   }
 
+  return supabase
+}
+
+export async function createTransaction(
+  userId: string,
+  input: TransactionInput
+): Promise<Transaction> {
+  const client = requireConnection(userId)
+
+  if (!Number.isFinite(input.amount) || input.amount <= 0) {
+    throw new Error('Enter a valid amount greater than zero.')
+  }
+
+  if (!input.category.trim()) {
+    throw new Error('Please select a transaction category.')
+  }
+
+  if (!input.date) {
+    throw new Error('Please select a transaction date.')
+  }
+
+  const { data, error } = await client
+    .from('transactions')
+    .insert({
+      user_id: userId,
+      amount: input.amount,
+      transaction_type: input.type,
+      category: input.category.trim(),
+      description: input.description.trim(),
+      transaction_date: input.date,
+    })
+    .select(
+      'id, amount, transaction_type, category, description, transaction_date'
+    )
+    .single()
+
+  if (error) {
+    throw new Error(`Could not save transaction: ${error.message}`)
+  }
+
+  return mapTransaction(data)
+}
+
+export async function loadTransactions(
+  userId: string
+): Promise<Transaction[]> {
+  const client = requireConnection(userId)
+
+  const { data, error } = await client
+    .from('transactions')
+    .select(
+      'id, amount, transaction_type, category, description, transaction_date'
+    )
+    .eq('user_id', userId)
+    .order('transaction_date', { ascending: false })
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    throw new Error(`Could not load transactions: ${error.message}`)
+  }
+
+  return (data ?? []).map(mapTransaction)
+}
+
+export async function loadDashboardData(
+  userId: string
+): Promise<DashboardData> {
+  const client = requireConnection(userId)
   const { start, end } = getMonthRange()
 
   const [
@@ -87,33 +176,33 @@ export async function loadDashboardData(
     goalsResult,
     debtsResult,
   ] = await Promise.all([
-    supabase
+    client
       .from('financial_profiles')
       .select('monthly_income, current_savings, currency')
       .eq('user_id', userId)
       .maybeSingle(),
 
-    supabase
+    client
       .from('transactions')
       .select('id, amount, transaction_type, category, description, transaction_date')
       .eq('user_id', userId)
       .gte('transaction_date', start)
       .lt('transaction_date', end),
 
-    supabase
+    client
       .from('transactions')
       .select('id, amount, transaction_type, category, description, transaction_date')
       .eq('user_id', userId)
       .order('transaction_date', { ascending: false })
       .limit(10),
 
-    supabase
+    client
       .from('goals')
       .select('id, goal_name, target_amount, current_amount, deadline, status')
       .eq('user_id', userId)
       .order('created_at', { ascending: false }),
 
-    supabase
+    client
       .from('debts')
       .select('id, creditor_name, balance, interest_rate, monthly_payment, due_date, status')
       .eq('user_id', userId)
@@ -153,19 +242,7 @@ export async function loadDashboardData(
 
   const transactions: Transaction[] = (
     recentTransactionsResult.data ?? []
-  ).map(row => ({
-    id: row.id,
-    title: row.description || row.category,
-    category: row.category,
-    amount: Number(row.amount),
-    date: row.transaction_date,
-    direction:
-      row.transaction_type === 'income'
-        ? 'in'
-        : row.transaction_type === 'transfer'
-          ? 'transfer'
-          : 'out',
-  }))
+  ).map(mapTransaction)
 
   const goals: Goal[] = (goalsResult.data ?? []).map(row => ({
     id: row.id,
