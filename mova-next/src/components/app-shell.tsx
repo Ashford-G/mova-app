@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import {
@@ -382,6 +383,7 @@ export function AppShell({
     return () => { cancelled = true }
   }, [active, userId])
 
+  // Load MOVA Safe purchase affordability history.
   useEffect(() => {
     if (active !== 'MOVA Safe') return
 
@@ -403,15 +405,19 @@ export function AppShell({
             'id, check_type, submitted_value, risk_level, risk_score, explanation, created_at'
           )
           .eq('user_id', userId)
-          // The database allows "payment", not "purchase_affordability".
-          .eq('check_type', 'payment')
+          .eq('check_type', 'purchase_affordability')
           .order('created_at', { ascending: false })
           .limit(10)
 
         if (error) throw error
 
         if (!cancelled) {
-          setSafeHistory((data ?? []).map(mapSafeAssessment))
+          const assessments = (data ?? []).map(mapSafeAssessment)
+          setSafeHistory(assessments)
+
+          if (assessments.length > 0 && !latestSafeAssessment) {
+            setLatestSafeAssessment(assessments[0])
+          }
         }
       } catch (error) {
         if (!cancelled) {
@@ -677,12 +683,12 @@ export function AppShell({
         remainingAfterPurchase: decision.remainingAfterPurchase,
       }
 
+      // Save using the new purchase_affordability database category.
       const { error } = await supabase
         .from('safe_checks')
         .insert({
           user_id: userId,
-          // The database CHECK constraint permits "payment".
-          check_type: 'payment',
+          check_type: 'purchase_affordability',
           submitted_value: JSON.stringify(submitted),
           risk_level: decision.riskLevel,
           risk_score: decision.riskScore,
