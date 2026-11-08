@@ -33,6 +33,8 @@ import { IntelligencePanel } from '@/components/intelligence-panel'
 
 import { MovaPricePanel } from '@/components/mova-price-panel'
 
+import { MoneyPositionPanel } from '@/components/money-position-panel'
+
 import { isSupabaseConfigured, supabase } from '@/lib/supabase'
 
 import {
