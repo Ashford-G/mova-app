@@ -51,6 +51,36 @@ export type DebtInput = {
   dueDate: string | null
 }
 
+export type SafeCheckInput = {
+  purchaseName: string
+  purchasePrice: number
+  availableMoney: number
+  essentialExpenses: number
+  upcomingObligations: number
+  savingsCommitments: number
+}
+
+export type SafeCheckResult = {
+  status: 'Affordable' | 'Be careful' | 'Not affordable right now'
+  riskLevel: 'low' | 'medium' | 'high'
+  riskScore: number
+  totalCommitments: number
+  moneyAfterCommitments: number
+  moneyAfterPurchase: number
+  safetyBuffer: number
+  explanation: string
+}
+
+export type SafeCheck = {
+  id: string
+  checkType: string
+  submittedValue: string
+  riskLevel: string
+  riskScore: number
+  explanation: string
+  createdAt: string
+}
+
 export type DashboardData = {
   currency: string
   monthlyIncome: number
@@ -138,6 +168,177 @@ function requireConnection(userId: string) {
   return supabase
 }
 
+/* ============================================================
+   MOVA SAFE
+   Purchase affordability assessment
+   ============================================================ */
+
+export function calculateSafeCheck(
+  input: SafeCheckInput
+): SafeCheckResult {
+  const purchaseName = input.purchaseName.trim()
+
+  if (!purchaseName) {
+    throw new Error('Please enter what you want to buy.')
+  }
+
+  if (!Number.isFinite(input.purchasePrice) || input.purchasePrice <= 0) {
+    throw new Error('Enter a purchase price greater than zero.')
+  }
+
+  const amounts = [
+    input.availableMoney,
+    input.essentialExpenses,
+    input.upcomingObligations,
+    input.savingsCommitments,
+  ]
+
+  if (amounts.some(amount => !Number.isFinite(amount) || amount < 0)) {
+    throw new Error('All money amounts must be valid numbers of zero or more.')
+  }
+
+  const totalCommitments =
+    input.essentialExpenses +
+    input.upcomingObligations +
+    input.savingsCommitments
+
+  const moneyAfterCommitments =
+    input.availableMoney - totalCommitments
+
+  const moneyAfterPurchase =
+    moneyAfterCommitments - input.purchasePrice
+
+  // MOVA keeps a suggested 10% buffer of available money.
+  const safetyBuffer = input.availableMoney * 0.1
+
+  let status: SafeCheckResult['status']
+  let riskLevel: SafeCheckResult['riskLevel']
+  let riskScore: number
+  let explanation: string
+
+  if (moneyAfterCommitments < 0 || moneyAfterPurchase < 0) {
+    status = 'Not affordable right now'
+    riskLevel = 'high'
+    riskScore = 100
+
+    explanation =
+      moneyAfterCommitments < 0
+        ? 'Your essential expenses, upcoming obligations and savings commitments already exceed the money you have available. This purchase would put you further under pressure.'
+        : 'After accounting for your commitments, you do not have enough money available for this purchase without creating a shortfall.'
+  } else if (moneyAfterPurchase < safetyBuffer) {
+    status = 'Be careful'
+    riskLevel = 'medium'
+    riskScore = 50
+
+    explanation =
+      'You can cover this purchase, but it would leave you with less than MOVA’s suggested 10% safety buffer. Consider delaying the purchase or choosing a cheaper option.'
+  } else {
+    status = 'Affordable'
+    riskLevel = 'low'
+    riskScore = 0
+
+    explanation =
+      'Based on the amounts you entered, you can cover this purchase, your listed commitments and still retain the suggested safety buffer.'
+  }
+
+  return {
+    status,
+    riskLevel,
+    riskScore,
+    totalCommitments,
+    moneyAfterCommitments,
+    moneyAfterPurchase,
+    safetyBuffer,
+    explanation,
+  }
+}
+
+export async function createSafeCheck(
+  userId: string,
+  input: SafeCheckInput
+): Promise<SafeCheck> {
+  const client = requireConnection(userId)
+
+  const result = calculateSafeCheck(input)
+
+  // The existing submitted_value column is TEXT.
+  // Store the complete assessment as JSON text.
+  const submittedValue = JSON.stringify({
+    purchaseName: input.purchaseName.trim(),
+    purchasePrice: input.purchasePrice,
+    availableMoney: input.availableMoney,
+    essentialExpenses: input.essentialExpenses,
+    upcomingObligations: input.upcomingObligations,
+    savingsCommitments: input.savingsCommitments,
+    totalCommitments: result.totalCommitments,
+    moneyAfterCommitments: result.moneyAfterCommitments,
+    moneyAfterPurchase: result.moneyAfterPurchase,
+    safetyBuffer: result.safetyBuffer,
+  })
+
+  const { data, error } = await client
+    .from('safe_checks')
+    .insert({
+      user_id: userId,
+      check_type: 'purchase_affordability',
+      submitted_value: submittedValue,
+      risk_level: result.riskLevel,
+      risk_score: result.riskScore,
+      explanation: result.explanation,
+    })
+    .select(
+      'id, check_type, submitted_value, risk_level, risk_score, explanation, created_at'
+    )
+    .single()
+
+  if (error) {
+    throw new Error(`Could not save MOVA Safe assessment: ${error.message}`)
+  }
+
+  return {
+    id: data.id,
+    checkType: data.check_type,
+    submittedValue: data.submitted_value,
+    riskLevel: data.risk_level,
+    riskScore: Number(data.risk_score),
+    explanation: data.explanation,
+    createdAt: data.created_at,
+  }
+}
+
+export async function loadSafeChecks(
+  userId: string
+): Promise<SafeCheck[]> {
+  const client = requireConnection(userId)
+
+  const { data, error } = await client
+    .from('safe_checks')
+    .select(
+      'id, check_type, submitted_value, risk_level, risk_score, explanation, created_at'
+    )
+    .eq('user_id', userId)
+    .eq('check_type', 'purchase_affordability')
+    .order('created_at', { ascending: false })
+
+  if (error) {
+    throw new Error(`Could not load MOVA Safe history: ${error.message}`)
+  }
+
+  return (data ?? []).map(row => ({
+    id: row.id,
+    checkType: row.check_type,
+    submittedValue: row.submitted_value,
+    riskLevel: row.risk_level,
+    riskScore: Number(row.risk_score),
+    explanation: row.explanation,
+    createdAt: row.created_at,
+  }))
+}
+
+/* ============================================================
+   TRANSACTIONS
+   ============================================================ */
+
 export async function createTransaction(
   userId: string,
   input: TransactionInput
@@ -198,6 +399,10 @@ export async function loadTransactions(
 
   return (data ?? []).map(mapTransaction)
 }
+
+/* ============================================================
+   GOALS
+   ============================================================ */
 
 export async function loadGoals(userId: string): Promise<Goal[]> {
   const client = requireConnection(userId)
@@ -288,6 +493,10 @@ export async function updateGoalProgress(
 
   return mapGoal(data)
 }
+
+/* ============================================================
+   DEBTS
+   ============================================================ */
 
 export async function loadDebts(userId: string): Promise<Debt[]> {
   const client = requireConnection(userId)
@@ -386,6 +595,10 @@ export async function updateDebtBalance(
 
   return mapDebt(data)
 }
+
+/* ============================================================
+   DASHBOARD
+   ============================================================ */
 
 export async function loadDashboardData(
   userId: string
