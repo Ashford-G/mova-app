@@ -1866,6 +1866,9 @@ export function AppShell({
                ) : active === 'MOVA Price' ? (
   <MovaPricePanel userId={userId} currency={currency} />
 
+) : active === 'AI Coach' ? (
+  <AiCoachPanel userId={userId} currency={currency} />
+
 ) : active === 'Profile' ? (
   <ProfilePanel
     userId={userId}
