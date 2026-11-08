@@ -994,44 +994,7 @@ export function AppShell({
                 </div>
               )}
 
-              <Card className="relative overflow-hidden border-emerald-300/15 bg-gradient-to-br from-[#142c36] via-[#102331] to-[#111b2b]">
-                <CardContent className="relative grid gap-8 p-6 md:grid-cols-[1.2fr_.8fr] md:p-8">
-                  <div>
-                    <div className="flex items-center gap-2 text-xs text-emerald-100/70">
-                      <Gauge size={15} />
-                      TRUE MONEY POSITION
-                      <span className="rounded-full bg-white/10 px-2 py-1 text-[9px]">
-                        CALCULATION PENDING
-                      </span>
-                    </div>
-                    <div className="mt-5 flex items-center gap-3">
-                      <h2 className="text-4xl font-semibold tracking-tight md:text-5xl">
-                        {showBalance ? '— — —' : '••••••'}
-                      </h2>
-                      <button onClick={() => setShowBalance(!showBalance)} className="text-xs text-slate-400">
-                        {showBalance ? 'Hide' : 'Show'}
-                      </button>
-                    </div>
-                    <p className="mt-3 max-w-sm text-xs leading-5 text-slate-400">
-                      Your complete financial position will appear here after MOVA's calculation rules are verified.
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="rounded-xl border border-white/10 bg-black/10 p-4">
-                      <p className="text-[10px] text-slate-400">Safe-to-Spend</p>
-                      <p className="mt-3 text-xl font-semibold">—</p>
-                      <p className="mt-1 text-[10px] text-slate-500">Calculation pending</p>
-                    </div>
-                    <div className="rounded-xl border border-white/10 bg-black/10 p-4">
-                      <p className="text-[10px] text-slate-400">Current savings</p>
-                      <p className="mt-3 text-xl font-semibold">
-                        {loading ? '...' : showBalance ? formatMoney(dashboard?.currentSavings ?? 0, currency) : '••••••'}
-                      </p>
-                      <p className="mt-1 text-[10px] text-slate-500">From your financial profile</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              
 
               <MoneyPositionPanel
   userId={userId}
