@@ -1889,7 +1889,9 @@ export function AppShell({
               </p>
             </div>
                  ) : active === 'MOVA Price' ? (
-            <MovaPricePanel userId={userId} currency={currency} />   ) : (
+            <MovaPricePanel userId={userId} currency={currency} />   
+
+) : (
             <Card>
               <CardContent className="p-8 md:p-10">
                 <div className="mb-4 grid h-12 w-12 place-items-center rounded-2xl bg-emerald-300/10 text-emerald-200">
