@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import {
@@ -14,6 +13,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  PiggyBank,
   Search,
   ShieldCheck,
   Sparkles,
@@ -43,6 +43,7 @@ import {
   loadDebts,
   createDebt,
   updateDebtBalance,
+  updateSavings,
   type DashboardData,
   type Transaction,
   type TransactionInput,
@@ -55,6 +56,7 @@ const nav = [
   { label: 'Overview', icon: LayoutDashboard, group: 'WORKSPACE' },
   { label: 'Intelligence', icon: Gauge, group: 'WORKSPACE' },
   { label: 'Transactions', icon: ArrowUpRight, group: 'MONEY' },
+  { label: 'Savings', icon: PiggyBank, group: 'MONEY' },
   { label: 'Goals', icon: GoalIcon, group: 'MONEY' },
   { label: 'Debts', icon: CreditCard, group: 'MONEY' },
   { label: 'MOVA Safe', icon: ShieldCheck, group: 'MONEY' },
@@ -67,6 +69,7 @@ const descriptions: Record<string, string> = {
   Overview: 'Your financial position at a glance.',
   Intelligence: 'Understand patterns across your financial life.',
   Transactions: 'A single view of money moving in and out.',
+  Savings: 'Track the money you have actually set aside.',
   Goals: 'Give your next milestone a clear plan.',
   Debts: 'Understand and manage what you owe.',
   'MOVA Safe': 'Make more confident purchase decisions.',
@@ -175,15 +178,17 @@ function mapSafeAssessment(row: any): SafeAssessment {
 
   return {
     id: row.id,
-    itemName: submitted.itemName || 'Purchase assessment',
+    itemName: submitted.itemName || submitted.purchaseName || 'Purchase assessment',
     purchasePrice: Number(submitted.purchasePrice ?? 0),
     availableMoney: Number(submitted.availableMoney ?? 0),
     essentialExpenses: Number(submitted.essentialExpenses ?? 0),
     upcomingObligations: Number(submitted.upcomingObligations ?? 0),
     savingsCommitments: Number(submitted.savingsCommitments ?? 0),
-    spendableMoney: Number(submitted.spendableMoney ?? 0),
+    spendableMoney: Number(
+      submitted.spendableMoney ?? submitted.moneyAfterCommitments ?? 0
+    ),
     remainingAfterPurchase: Number(
-      submitted.remainingAfterPurchase ?? 0
+      submitted.remainingAfterPurchase ?? submitted.moneyAfterPurchase ?? 0
     ),
     riskLevel,
     riskScore: Number(row.risk_score ?? 0),
@@ -244,6 +249,11 @@ export function AppShell({
     const now = new Date()
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
   })
+
+  // SAVINGS
+  const [savingsAmount, setSavingsAmount] = useState('')
+  const [savingsSaving, setSavingsSaving] = useState(false)
+  const [savingsMessage, setSavingsMessage] = useState('')
 
   const [goals, setGoals] = useState<Goal[]>([])
   const [goalLoading, setGoalLoading] = useState(false)
@@ -308,6 +318,14 @@ export function AppShell({
       activeRequest = false
     }
   }, [userId])
+
+  // Load the current savings balance when the Savings section is opened.
+  useEffect(() => {
+    if (active !== 'Savings') return
+
+    setSavingsAmount(String(dashboard?.currentSavings ?? 0))
+    setSavingsMessage('')
+  }, [active, dashboard?.currentSavings])
 
   useEffect(() => {
     if (active !== 'Transactions') return
@@ -460,6 +478,41 @@ export function AppShell({
   async function refreshDashboard() {
     const result = await loadDashboardData(userId)
     setDashboard(result)
+  }
+
+  async function handleUpdateSavings(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (savingsSaving) return
+
+    const trimmedAmount = savingsAmount.trim()
+    const amount = Number(trimmedAmount)
+
+    if (
+      trimmedAmount === '' ||
+      !Number.isFinite(amount) ||
+      amount < 0
+    ) {
+      setSavingsMessage('Enter a valid savings balance of zero or more.')
+      return
+    }
+
+    setSavingsSaving(true)
+    setSavingsMessage('')
+
+    try {
+      const savedAmount = await updateSavings(userId, amount)
+
+      await refreshDashboard()
+
+      setSavingsAmount(String(savedAmount))
+      setSavingsMessage('Your savings balance has been updated successfully.')
+    } catch (error) {
+      setSavingsMessage(
+        getErrorMessage(error) || 'Could not update your savings balance.'
+      )
+    } finally {
+      setSavingsSaving(false)
+    }
   }
 
   async function handleCreateTransaction(event: FormEvent<HTMLFormElement>) {
@@ -1082,6 +1135,97 @@ export function AppShell({
               debts={dashboard?.debts ?? []}
               goals={dashboard?.goals ?? []}
             />
+          ) : active === 'Savings' ? (
+            <div className="mx-auto max-w-3xl space-y-6">
+              <div>
+                <div className="flex items-center gap-2 text-emerald-200">
+                  <PiggyBank size={18} />
+                  <span className="text-xs font-semibold tracking-wider">ACTUAL SAVINGS BALANCE</span>
+                </div>
+                <h1 className="mt-2 text-2xl font-semibold md:text-3xl">
+                  Your savings
+                </h1>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
+                  Record the total money you have actually set aside. This balance is separate from the progress you record against individual savings goals.
+                </p>
+              </div>
+
+              <Card className="border-emerald-300/15 bg-gradient-to-br from-[#142c36] to-[#111b2b]">
+                <CardContent className="p-6 md:p-8">
+                  <p className="text-xs font-medium tracking-wider text-emerald-100/70">
+                    CURRENT SAVINGS
+                  </p>
+                  <p className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
+                    {loading
+                      ? 'Loading...'
+                      : showBalance
+                        ? formatMoney(dashboard?.currentSavings ?? 0, currency)
+                        : '••••••'}
+                  </p>
+                  <p className="mt-2 text-xs text-slate-400">
+                    Your latest recorded savings balance
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Update your savings balance</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handleUpdateSavings} className="space-y-4">
+                    <div>
+                      <label className="mb-2 block text-xs text-slate-400">
+                        Total money currently saved ({currency})
+                      </label>
+                      <input
+                        required
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={savingsAmount}
+                        onChange={event => setSavingsAmount(event.target.value)}
+                        placeholder="e.g. 500"
+                        className="w-full rounded-xl border border-white/10 bg-[#0b1422] px-4 py-4 text-lg text-white outline-none focus:border-emerald-300/50"
+                      />
+                      <p className="mt-2 text-[11px] leading-5 text-slate-500">
+                        Enter your current total savings balance, not just the amount you saved this month.
+                      </p>
+                    </div>
+
+                    <Button
+                      type="submit"
+                      disabled={savingsSaving || loading}
+                      className="w-full"
+                    >
+                      {savingsSaving ? 'Saving balance...' : 'Save savings balance'}
+                    </Button>
+
+                    {savingsMessage && (
+                      <p role="status" className="text-xs leading-5 text-slate-300">
+                        {savingsMessage}
+                      </p>
+                    )}
+                  </form>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardContent className="p-5">
+                  <div className="flex items-start gap-3">
+                    <div className="rounded-xl bg-sky-300/10 p-2 text-sky-200">
+                      <CircleHelp size={17} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">Savings vs. savings goals</p>
+                      <p className="mt-2 text-xs leading-5 text-slate-400">
+                        Your Savings balance is the actual total you have put aside. Your Goals section tracks progress towards individual targets. Keep them separate so MOVA does not count the same money twice.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           ) : active === 'Transactions' ? (
             <div className="space-y-6">
               <div>
