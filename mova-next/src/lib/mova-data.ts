@@ -312,7 +312,6 @@ export async function createDebt(
   input: DebtInput
 ): Promise<Debt> {
   const client = requireConnection(userId)
-
   const creditor = input.creditor.trim()
 
   if (!creditor) {
@@ -320,18 +319,15 @@ export async function createDebt(
   }
 
   if (!Number.isFinite(input.balance) || input.balance <= 0) {
-    throw new Error('Enter a valid debt balance greater than zero.')
+    throw new Error('Enter a valid outstanding balance.')
   }
 
   if (!Number.isFinite(input.interestRate) || input.interestRate < 0) {
     throw new Error('Enter a valid interest rate.')
   }
 
-  if (
-    !Number.isFinite(input.monthlyPayment) ||
-    input.monthlyPayment < 0
-  ) {
-    throw new Error('Enter a valid monthly repayment amount.')
+  if (!Number.isFinite(input.monthlyPayment) || input.monthlyPayment < 0) {
+    throw new Error('Enter a valid monthly payment.')
   }
 
   const { data, error } = await client
@@ -360,22 +356,22 @@ export async function createDebt(
 export async function updateDebtBalance(
   userId: string,
   debtId: string,
-  newBalance: number
+  balance: number
 ): Promise<Debt> {
   const client = requireConnection(userId)
 
   if (!debtId) {
-    throw new Error('A debt must be selected.')
+    throw new Error('Please select a debt.')
   }
 
-  if (!Number.isFinite(newBalance) || newBalance < 0) {
+  if (!Number.isFinite(balance) || balance < 0) {
     throw new Error('Enter a valid outstanding balance.')
   }
 
   const { data, error } = await client
     .from('debts')
     .update({
-      balance: newBalance,
+      balance,
     })
     .eq('id', debtId)
     .eq('user_id', userId)
