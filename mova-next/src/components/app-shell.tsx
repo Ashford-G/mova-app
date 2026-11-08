@@ -36,10 +36,15 @@ import {
   loadGoals,
   createGoal,
   updateGoalProgress,
+  loadDebts,
+  createDebt,
+  updateDebtBalance,
   type DashboardData,
   type Transaction,
   type TransactionInput,
   type Goal,
+  type Debt,
+  type DebtInput,
 } from '@/lib/mova-data'
 
 const nav = [
@@ -47,6 +52,7 @@ const nav = [
   { label: 'Intelligence', icon: Gauge, group: 'WORKSPACE' },
   { label: 'Transactions', icon: ArrowUpRight, group: 'MONEY' },
   { label: 'Goals', icon: GoalIcon, group: 'MONEY' },
+  { label: 'Debts', icon: CreditCard, group: 'MONEY' },
   { label: 'MOVA Safe', icon: ShieldCheck, group: 'MONEY' },
   { label: 'MOVA Price', icon: CreditCard, group: 'MONEY' },
   { label: 'AI Coach', icon: Sparkles, group: 'PERSONAL' },
@@ -58,6 +64,7 @@ const descriptions: Record<string, string> = {
   Intelligence: 'Understand patterns across your financial life.',
   Transactions: 'A single view of money moving in and out.',
   Goals: 'Give your next milestone a clear plan.',
+  Debts: 'Understand and manage what you owe.',
   'MOVA Safe': 'Your financial safety space.',
   'MOVA Price': 'Make more informed price decisions.',
   'AI Coach': 'A thinking partner for your money decisions.',
@@ -119,6 +126,18 @@ export function AppShell({
   const [goalDeadline, setGoalDeadline] = useState('')
   const [progressInputs, setProgressInputs] = useState<Record<string, string>>({})
   const [progressSaving, setProgressSaving] = useState<string | null>(null)
+
+  const [debts, setDebts] = useState<Debt[]>([])
+  const [debtLoading, setDebtLoading] = useState(false)
+  const [debtSaving, setDebtSaving] = useState(false)
+  const [debtMessage, setDebtMessage] = useState('')
+  const [debtCreditor, setDebtCreditor] = useState('')
+  const [debtBalance, setDebtBalance] = useState('')
+  const [debtInterestRate, setDebtInterestRate] = useState('0')
+  const [debtMonthlyPayment, setDebtMonthlyPayment] = useState('')
+  const [debtDueDate, setDebtDueDate] = useState('')
+  const [debtBalanceInputs, setDebtBalanceInputs] = useState<Record<string, string>>({})
+  const [debtUpdating, setDebtUpdating] = useState<string | null>(null)
 
   const groups = ['WORKSPACE', 'MONEY', 'PERSONAL']
 
@@ -208,6 +227,41 @@ export function AppShell({
     }
 
     fetchGoals()
+    return () => { cancelled = true }
+  }, [active, userId])
+
+  useEffect(() => {
+    if (active !== 'Debts') return
+
+    let cancelled = false
+
+    async function fetchDebts() {
+      setDebtLoading(true)
+      setDebtMessage('')
+
+      try {
+        const result = await loadDebts(userId)
+
+        if (!cancelled) {
+          setDebts(result)
+          setDebtBalanceInputs(
+            Object.fromEntries(
+              result.map(debt => [debt.id, String(debt.balance)])
+            )
+          )
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setDebtMessage(
+            error instanceof Error ? error.message : 'Could not load debts.'
+          )
+        }
+      } finally {
+        if (!cancelled) setDebtLoading(false)
+      }
+    }
+
+    fetchDebts()
     return () => { cancelled = true }
   }, [active, userId])
 
@@ -320,6 +374,84 @@ export function AppShell({
     }
   }
 
+  async function handleCreateDebt(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (debtSaving) return
+
+    setDebtSaving(true)
+    setDebtMessage('')
+
+    try {
+      const input: DebtInput = {
+        creditor: debtCreditor,
+        balance: Number(debtBalance),
+        interestRate: Number(debtInterestRate),
+        monthlyPayment: Number(debtMonthlyPayment || 0),
+        dueDate: debtDueDate || null,
+      }
+
+      const newDebt = await createDebt(userId, input)
+
+      setDebts(current => [newDebt, ...current])
+      setDebtBalanceInputs(current => ({
+        ...current,
+        [newDebt.id]: String(newDebt.balance),
+      }))
+
+      setDebtCreditor('')
+      setDebtBalance('')
+      setDebtInterestRate('0')
+      setDebtMonthlyPayment('')
+      setDebtDueDate('')
+      setDebtMessage('Debt record created successfully.')
+
+      await refreshDashboard()
+    } catch (error) {
+      setDebtMessage(
+        error instanceof Error ? error.message : 'Could not create debt record.'
+      )
+    } finally {
+      setDebtSaving(false)
+    }
+  }
+
+  async function handleUpdateDebtBalance(
+    event: FormEvent<HTMLFormElement>,
+    debt: Debt
+  ) {
+    event.preventDefault()
+    if (debtUpdating) return
+
+    setDebtUpdating(debt.id)
+    setDebtMessage('')
+
+    try {
+      const updatedDebt = await updateDebtBalance(
+        userId,
+        debt.id,
+        Number(debtBalanceInputs[debt.id])
+      )
+
+      setDebts(current =>
+        current.map(item => item.id === debt.id ? updatedDebt : item)
+      )
+
+      setDebtBalanceInputs(current => ({
+        ...current,
+        [debt.id]: String(updatedDebt.balance),
+      }))
+
+      setDebtMessage(`Outstanding balance updated for ${debt.creditor}.`)
+      await refreshDashboard()
+    } catch (error) {
+      setDebtMessage(
+        error instanceof Error ? error.message : 'Could not update debt balance.'
+      )
+    } finally {
+      setDebtUpdating(null)
+    }
+  }
+
   const currency = dashboard?.currency || 'USD'
 
   const totalDebt =
@@ -335,6 +467,11 @@ export function AppShell({
     totalGoalTarget > 0
       ? Math.min(100, (totalGoalSaved / totalGoalTarget) * 100)
       : 0
+
+  const totalDebtOnPage = debts.reduce(
+    (total, debt) => total + debt.balance,
+    0
+  )
 
   const filteredTransactions = transactions.filter(transaction => {
     if (transactionFilter === 'all') return true
@@ -877,6 +1014,201 @@ export function AppShell({
                         </Card>
                       )
                     })}
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : active === 'Debts' ? (
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-2xl font-semibold">Debt management</h1>
+                <p className="mt-2 text-sm text-slate-400">
+                  Keep track of what you owe, repayment commitments and outstanding balances.
+                </p>
+              </div>
+
+              <Card className="border-rose-300/15 bg-gradient-to-br from-[#2b1b27] to-[#111b2b]">
+                <CardContent className="p-6">
+                  <p className="text-xs text-slate-400">TOTAL OUTSTANDING DEBT</p>
+                  <p className="mt-3 text-3xl font-semibold">
+                    {showBalance ? formatMoney(totalDebtOnPage, currency) : '••••••'}
+                  </p>
+                  <p className="mt-2 text-xs text-slate-500">
+                    {debts.length} recorded {debts.length === 1 ? 'debt' : 'debts'}
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader><CardTitle>Record a debt</CardTitle></CardHeader>
+                <CardContent>
+                  <form onSubmit={handleCreateDebt} className="space-y-4">
+                    <div>
+                      <label className="mb-2 block text-xs text-slate-400">Creditor or lender</label>
+                      <input
+                        required
+                        value={debtCreditor}
+                        onChange={event => setDebtCreditor(event.target.value)}
+                        placeholder="e.g. Bank, lender or person"
+                        className="w-full rounded-xl border border-white/10 bg-[#0b1422] px-4 py-3 text-sm text-white outline-none focus:border-emerald-300/50"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-xs text-slate-400">Outstanding balance ({currency})</label>
+                      <input
+                        required
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        value={debtBalance}
+                        onChange={event => setDebtBalance(event.target.value)}
+                        placeholder="e.g. 500"
+                        className="w-full rounded-xl border border-white/10 bg-[#0b1422] px-4 py-3 text-sm text-white outline-none focus:border-emerald-300/50"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-xs text-slate-400">Annual interest rate (%)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={debtInterestRate}
+                        onChange={event => setDebtInterestRate(event.target.value)}
+                        placeholder="0"
+                        className="w-full rounded-xl border border-white/10 bg-[#0b1422] px-4 py-3 text-sm text-white outline-none focus:border-emerald-300/50"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-xs text-slate-400">Monthly repayment ({currency})</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={debtMonthlyPayment}
+                        onChange={event => setDebtMonthlyPayment(event.target.value)}
+                        placeholder="e.g. 50"
+                        className="w-full rounded-xl border border-white/10 bg-[#0b1422] px-4 py-3 text-sm text-white outline-none focus:border-emerald-300/50"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-xs text-slate-400">Next due date (optional)</label>
+                      <input
+                        type="date"
+                        value={debtDueDate}
+                        onChange={event => setDebtDueDate(event.target.value)}
+                        className="w-full rounded-xl border border-white/10 bg-[#0b1422] px-4 py-3 text-sm text-white outline-none"
+                      />
+                    </div>
+
+                    <Button type="submit" disabled={debtSaving} className="w-full">
+                      {debtSaving ? 'Saving debt...' : 'Save debt'}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+
+              {debtMessage && (
+                <div role="status" className="rounded-xl border border-white/10 bg-white/[.03] p-3 text-sm text-slate-300">
+                  {debtMessage}
+                </div>
+              )}
+
+              <div>
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="text-lg font-semibold">Your debts</h2>
+                  <span className="text-xs text-slate-500">{debts.length} total</span>
+                </div>
+
+                {debtLoading ? (
+                  <Card>
+                    <CardContent className="py-12 text-center text-sm text-slate-500">
+                      Loading your debts...
+                    </CardContent>
+                  </Card>
+                ) : debts.length === 0 ? (
+                  <Card>
+                    <CardContent className="py-12 text-center">
+                      <CreditCard className="mx-auto mb-3 text-slate-500" size={28} />
+                      <p className="text-sm font-medium text-slate-300">No debts recorded</p>
+                      <p className="mt-2 text-xs text-slate-500">
+                        Add a debt above to start tracking your outstanding balances.
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="grid gap-4 xl:grid-cols-2">
+                    {debts.map(debt => (
+                      <Card key={debt.id}>
+                        <CardContent className="p-5">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <h3 className="font-semibold">{debt.creditor}</h3>
+                              <p className="mt-1 text-xs text-slate-500">
+                                {debt.dueDate
+                                  ? `Next due date: ${debt.dueDate}`
+                                  : 'No due date set'}
+                              </p>
+                            </div>
+                            <Badge>{debt.status}</Badge>
+                          </div>
+
+                          <div className="mt-5">
+                            <p className="text-xs text-slate-500">Outstanding balance</p>
+                            <p className="mt-1 text-2xl font-semibold text-rose-200">
+                              {formatMoney(debt.balance, currency)}
+                            </p>
+                          </div>
+
+                          <div className="mt-4 grid grid-cols-2 gap-3">
+                            <div className="rounded-xl bg-white/[.03] p-3">
+                              <p className="text-[10px] text-slate-500">Interest rate</p>
+                              <p className="mt-1 text-sm font-semibold">
+                                {debt.interestRate}%
+                              </p>
+                            </div>
+                            <div className="rounded-xl bg-white/[.03] p-3">
+                              <p className="text-[10px] text-slate-500">Monthly repayment</p>
+                              <p className="mt-1 text-sm font-semibold">
+                                {formatMoney(debt.monthlyPayment, currency)}
+                              </p>
+                            </div>
+                          </div>
+
+                          <form
+                            onSubmit={event => handleUpdateDebtBalance(event, debt)}
+                            className="mt-5 space-y-3 border-t border-white/[.07] pt-4"
+                          >
+                            <label className="block text-xs text-slate-400">
+                              Update outstanding balance ({currency})
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              required
+                              value={debtBalanceInputs[debt.id] ?? String(debt.balance)}
+                              onChange={event => setDebtBalanceInputs(current => ({
+                                ...current,
+                                [debt.id]: event.target.value,
+                              }))}
+                              className="w-full rounded-xl border border-white/10 bg-[#0b1422] px-4 py-3 text-sm text-white outline-none focus:border-emerald-300/50"
+                            />
+                            <Button
+                              type="submit"
+                              disabled={debtUpdating === debt.id}
+                              variant="outline"
+                              className="w-full"
+                            >
+                              {debtUpdating === debt.id ? 'Updating...' : 'Update balance'}
+                            </Button>
+                          </form>
+                        </CardContent>
+                      </Card>
+                    ))}
                   </div>
                 )}
               </div>
