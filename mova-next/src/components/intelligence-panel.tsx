@@ -10,6 +10,8 @@ import {
   CreditCard,
   Target,
   BarChart3,
+  ShieldCheck,
+  AlertTriangle,
 } from 'lucide-react'
 
 import {
@@ -50,6 +52,10 @@ function monthKey(date: Date) {
 
 function transactionMonth(date: string) {
   return date.slice(0, 7)
+}
+
+function daysInMonth(year: number, month: number) {
+  return new Date(year, month + 1, 0).getDate()
 }
 
 export function IntelligencePanel({
@@ -100,6 +106,8 @@ export function IntelligencePanel({
     const now = new Date()
     const currentMonth = monthKey(now)
 
+    const currentDay = now.getDate()
+
     const previousDate = new Date(
       now.getFullYear(),
       now.getMonth() - 1,
@@ -108,12 +116,28 @@ export function IntelligencePanel({
 
     const previousMonth = monthKey(previousDate)
 
+    // Compare the same number of calendar days in both months.
+    const previousCutoffDay = Math.min(
+      currentDay,
+      daysInMonth(
+        previousDate.getFullYear(),
+        previousDate.getMonth()
+      )
+    )
+
+    const currentCutoff = `${currentMonth}-${String(currentDay).padStart(2, '0')}`
+    const previousCutoff = `${previousMonth}-${String(previousCutoffDay).padStart(2, '0')}`
+
     const currentTransactions = transactions.filter(
-      item => transactionMonth(item.date) === currentMonth
+      item =>
+        transactionMonth(item.date) === currentMonth &&
+        item.date.slice(0, 10) <= currentCutoff
     )
 
     const previousTransactions = transactions.filter(
-      item => transactionMonth(item.date) === previousMonth
+      item =>
+        transactionMonth(item.date) === previousMonth &&
+        item.date.slice(0, 10) <= previousCutoff
     )
 
     function totals(items: Transaction[]) {
@@ -144,9 +168,17 @@ export function IntelligencePanel({
       )
 
       const key = monthKey(date)
-      const monthTransactions = transactions.filter(
-        item => transactionMonth(item.date) === key
-      )
+
+      const monthTransactions = transactions.filter(item => {
+        if (transactionMonth(item.date) !== key) return false
+
+        // The current month shows month-to-date figures.
+        if (key === currentMonth) {
+          return item.date.slice(0, 10) <= currentCutoff
+        }
+
+        return true
+      })
 
       const values = totals(monthTransactions)
 
@@ -213,11 +245,25 @@ export function IntelligencePanel({
       currentTransactionCount: currentTransactions.length,
       hasPreviousData: previousTransactions.length > 0,
       hasCurrentData: currentTransactions.length > 0,
+      currentDay,
+      previousCutoffDay,
     }
   }, [transactions, debts, goals])
 
   const cashFlow =
     analytics.current.income - analytics.current.expenses
+
+  const cashFlowMargin =
+    analytics.current.income > 0
+      ? (cashFlow / analytics.current.income) * 100
+      : null
+
+  const debtToSavingsRatio =
+    currentSavings > 0
+      ? (analytics.totalDebt / currentSavings) * 100
+      : analytics.totalDebt > 0
+        ? null
+        : 0
 
   const goalProgress =
     analytics.totalTargets > 0
@@ -244,6 +290,9 @@ export function IntelligencePanel({
     analytics.current.expenses,
     analytics.previous.expenses
   )
+
+  const comparisonLabel =
+    `Compared with the first ${analytics.previousCutoffDay} days of last month`
 
   if (loading) {
     return (
@@ -283,16 +332,16 @@ export function IntelligencePanel({
         </h1>
 
         <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
-          Your financial patterns, spending behaviour and progress,
-          calculated from your recorded MOVA data.
+          Understand your financial patterns, spending behaviour,
+          debt exposure and progress using your recorded MOVA data.
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <Card>
           <CardContent className="p-5">
             <div className="flex items-center justify-between text-slate-400">
-              <span className="text-xs">Monthly income</span>
+              <span className="text-xs">Income this month</span>
               <ArrowDownLeft size={17} className="text-emerald-200" />
             </div>
 
@@ -307,16 +356,20 @@ export function IntelligencePanel({
                 {incomeChange >= 0
                   ? <TrendingUp size={13} />
                   : <TrendingDown size={13} />}
-                {Math.abs(incomeChange).toFixed(1)}% vs last month
+                {Math.abs(incomeChange).toFixed(1)}% vs previous period
               </p>
             )}
+
+            <p className="mt-2 text-[10px] text-slate-500">
+              Month to date
+            </p>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="p-5">
             <div className="flex items-center justify-between text-slate-400">
-              <span className="text-xs">Monthly expenses</span>
+              <span className="text-xs">Expenses this month</span>
               <ArrowUpRight size={17} className="text-rose-200" />
             </div>
 
@@ -331,9 +384,13 @@ export function IntelligencePanel({
                 {expenseChange > 0
                   ? <TrendingUp size={13} />
                   : <TrendingDown size={13} />}
-                {Math.abs(expenseChange).toFixed(1)}% vs last month
+                {Math.abs(expenseChange).toFixed(1)}% vs previous period
               </p>
             )}
+
+            <p className="mt-2 text-[10px] text-slate-500">
+              Month to date
+            </p>
           </CardContent>
         </Card>
 
@@ -352,6 +409,56 @@ export function IntelligencePanel({
 
             <p className="mt-2 text-[10px] text-slate-500">
               Income minus expenses this month
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between text-slate-400">
+              <span className="text-xs">Cash-flow margin</span>
+              <Activity size={17} />
+            </div>
+
+            <p className={`mt-4 text-2xl font-semibold ${
+              cashFlowMargin === null
+                ? 'text-slate-300'
+                : cashFlowMargin >= 0
+                  ? 'text-emerald-200'
+                  : 'text-rose-200'
+            }`}>
+              {cashFlowMargin === null
+                ? 'Not available'
+                : `${cashFlowMargin.toFixed(1)}%`}
+            </p>
+
+            <p className="mt-2 text-[10px] text-slate-500">
+              Portion of recorded income remaining after expenses
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between text-slate-400">
+              <span className="text-xs">Debt-to-savings ratio</span>
+              <CreditCard size={17} />
+            </div>
+
+            <p className={`mt-4 text-2xl font-semibold ${
+              debtToSavingsRatio === null
+                ? 'text-amber-200'
+                : debtToSavingsRatio > 100
+                  ? 'text-rose-200'
+                  : 'text-emerald-200'
+            }`}>
+              {debtToSavingsRatio === null
+                ? 'No savings recorded'
+                : `${debtToSavingsRatio.toFixed(1)}%`}
+            </p>
+
+            <p className="mt-2 text-[10px] text-slate-500">
+              Outstanding debt compared with current savings
             </p>
           </CardContent>
         </Card>
@@ -380,8 +487,8 @@ export function IntelligencePanel({
             Not enough activity this month
           </p>
           <p className="mt-1 text-xs leading-5 text-slate-400">
-            You have no income or expense transactions recorded for
-            this calendar month. Add transactions to generate meaningful
+            You have no income or expense transactions recorded
+            for this month. Add transactions to generate meaningful
             monthly analysis.
           </p>
         </div>
@@ -390,6 +497,9 @@ export function IntelligencePanel({
       <Card>
         <CardHeader>
           <CardTitle>Six-month financial trend</CardTitle>
+          <p className="text-xs text-slate-400">
+            The current month shows month-to-date figures.
+          </p>
         </CardHeader>
 
         <CardContent>
@@ -452,6 +562,9 @@ export function IntelligencePanel({
         <Card>
           <CardHeader>
             <CardTitle>Where your money goes</CardTitle>
+            <p className="text-xs text-slate-400">
+              Your largest recorded spending categories this month.
+            </p>
           </CardHeader>
 
           <CardContent>
@@ -576,11 +689,14 @@ export function IntelligencePanel({
 
       <Card>
         <CardHeader>
-          <CardTitle>Monthly observations</CardTitle>
+          <CardTitle>Financial observations</CardTitle>
+          <p className="text-xs text-slate-400">
+            What your recorded numbers may be telling you.
+          </p>
         </CardHeader>
 
         <CardContent>
-          <div className="space-y-4">
+          <div className="space-y-5">
             {!analytics.hasCurrentData ? (
               <p className="text-sm leading-6 text-slate-400">
                 MOVA needs recorded income or expenses for this month
@@ -589,7 +705,11 @@ export function IntelligencePanel({
             ) : (
               <>
                 <div className="flex items-start gap-3">
-                  <div className="rounded-lg bg-emerald-300/10 p-2 text-emerald-200">
+                  <div className={`rounded-lg p-2 ${
+                    cashFlow >= 0
+                      ? 'bg-emerald-300/10 text-emerald-200'
+                      : 'bg-rose-300/10 text-rose-200'
+                  }`}>
                     {cashFlow >= 0
                       ? <TrendingUp size={17} />
                       : <TrendingDown size={17} />}
@@ -609,6 +729,26 @@ export function IntelligencePanel({
                     </p>
                   </div>
                 </div>
+
+                {cashFlowMargin !== null && (
+                  <div className="flex items-start gap-3">
+                    <div className="rounded-lg bg-sky-300/10 p-2 text-sky-200">
+                      <Activity size={17} />
+                    </div>
+
+                    <div>
+                      <p className="text-sm font-medium">
+                        Cash-flow margin
+                      </p>
+
+                      <p className="mt-1 text-xs leading-5 text-slate-400">
+                        {cashFlowMargin >= 0
+                          ? `${cashFlowMargin.toFixed(1)}% of your recorded income remains after recorded expenses.`
+                          : `Your recorded expenses exceed your income by ${Math.abs(cashFlowMargin).toFixed(1)}% of income. Review spending and upcoming commitments.`}
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {analytics.categories.length > 0 && (
                   <div className="flex items-start gap-3">
@@ -645,13 +785,45 @@ export function IntelligencePanel({
 
                       <p className="mt-1 text-xs leading-5 text-slate-400">
                         Your recorded expenses have{' '}
-                        {expenseChange > 0 ? 'increased' : expenseChange < 0 ? 'decreased' : 'not changed'}
+                        {expenseChange > 0
+                          ? 'increased'
+                          : expenseChange < 0
+                            ? 'decreased'
+                            : 'not changed'}
                         {' '}by {Math.abs(expenseChange).toFixed(1)}%
-                        {' '}compared with last month.
+                        {' '}compared with the same period last month.
                       </p>
                     </div>
                   </div>
                 )}
+
+                <div className="flex items-start gap-3">
+                  <div className={`rounded-lg p-2 ${
+                    debtToSavingsRatio === null || debtToSavingsRatio > 100
+                      ? 'bg-amber-300/10 text-amber-200'
+                      : 'bg-emerald-300/10 text-emerald-200'
+                  }`}>
+                    {debtToSavingsRatio === null || debtToSavingsRatio > 100
+                      ? <AlertTriangle size={17} />
+                      : <ShieldCheck size={17} />}
+                  </div>
+
+                  <div>
+                    <p className="text-sm font-medium">
+                      Debt exposure
+                    </p>
+
+                    <p className="mt-1 text-xs leading-5 text-slate-400">
+                      {debtToSavingsRatio === null
+                        ? 'You have recorded debt but no current savings balance. Consider building a cash buffer while keeping required debt payments up to date.'
+                        : debtToSavingsRatio === 0
+                          ? 'You have no outstanding recorded debt.'
+                          : debtToSavingsRatio > 100
+                            ? `Your recorded debt is ${debtToSavingsRatio.toFixed(1)}% of your current savings. Your debt is greater than your recorded savings.`
+                            : `Your recorded debt is ${debtToSavingsRatio.toFixed(1)}% of your current savings. Continue monitoring both balances.`}
+                    </p>
+                  </div>
+                </div>
               </>
             )}
           </div>
@@ -661,8 +833,9 @@ export function IntelligencePanel({
       <p className="text-[11px] leading-5 text-slate-500">
         Intelligence uses transactions, savings, debts and goals recorded
         in MOVA. It does not connect to your bank or automatically detect
-        unrecorded financial activity. Its observations are based only
-        on the data available in your account.
+        unrecorded financial activity. Month-to-month comparisons use
+        equivalent calendar periods. Observations are based only on the
+        data available in your account.
       </p>
     </div>
   )
