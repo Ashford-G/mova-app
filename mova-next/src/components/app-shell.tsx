@@ -929,63 +929,66 @@ export function AppShell({
       )}
 
       <div className="lg:pl-[248px]">
-        <header className="sticky top-0 z-20 flex h-[76px] items-center justify-between border-b border-white/[.07] bg-[#080f1b]/95 px-3 backdrop-blur-xl sm:px-5 md:px-8">
-          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="shrink-0 lg:hidden"
-              onClick={() => setMobileOpen(true)}
-            >
-              <Menu size={19} />
-            </Button>
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold">{active}</p>
-              <p className="hidden text-[11px] text-slate-500 sm:block">
-                {descriptions[active]}
-              </p>
-            </div>
-          </div>
+<header className="sticky top-0 z-20 flex h-[76px] items-center justify-between border-b border-white/[.07] bg-[#080f1b]/95 px-3 backdrop-blur-xl sm:px-5 md:px-8">
+  <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+    <Button
+      variant="ghost"
+      size="icon"
+      className="shrink-0 lg:hidden"
+      onClick={() => setMobileOpen(true)}
+    >
+      <Menu size={19} />
+    </Button>
 
-          <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-            <Button variant="ghost" size="icon" className="hidden sm:inline-flex" aria-label="Search">
-              <Search size={17} />
-            </Button>
-            <Button variant="ghost" size="icon" className="hidden sm:inline-flex" aria-label="Notifications">
-              <Bell size={17} />
-            </Button>
-            <div className="ml-1 flex items-center gap-2 border-l border-white/10 pl-2 sm:ml-2 sm:pl-3">
-  <button
-    type="button"
-    onClick={() => {
-      setActive('Profile')
-      setMobileOpen(false)
-    }}
-    aria-label="Open Profile"
-    title="Open Profile"
-    className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-slate-700 text-xs font-semibold text-white transition hover:bg-emerald-300/20 hover:ring-2 hover:ring-emerald-300/40 active:scale-95"
-  >
-    {email.slice(0, 1).toUpperCase()}
-  </button>
+    <div className="min-w-0">
+      <p className="truncate text-sm font-semibold">{active}</p>
+      <p className="hidden text-[11px] text-slate-500 sm:block">
+        {descriptions[active]}
+      </p>
+    </div>
+  </div>
 
-  <span className="hidden max-w-[140px] truncate text-xs text-slate-300 sm:block">
-    {email}
-  </span>
+  <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+    <Button variant="ghost" size="icon" className="hidden sm:inline-flex" aria-label="Search">
+      <Search size={17} />
+    </Button>
 
-  <ChevronDown size={14} className="hidden text-slate-500 sm:block" />
-</div>
+    <Button variant="ghost" size="icon" className="hidden sm:inline-flex" aria-label="Notifications">
+      <Bell size={17} />
+    </Button>
 
-            <button
-              onClick={onSignOut}
-              aria-label="Sign out"
-              title="Sign out"
-              className="ml-1 flex h-10 items-center justify-center gap-2 rounded-xl border border-rose-300/20 bg-rose-300/[.07] px-3 text-rose-200 transition hover:bg-rose-300/15 active:scale-95"
-            >
-              <LogOut size={17} />
-              <span className="hidden text-xs font-semibold sm:inline">Sign out</span>
-            </button>
-          </div>
-        </header>
+    <div className="ml-1 flex items-center gap-2 border-l border-white/10 pl-2 sm:ml-2 sm:pl-3">
+      <button
+        type="button"
+        onClick={() => {
+          setActive('Profile')
+          setMobileOpen(false)
+        }}
+        aria-label="Open Profile"
+        title="Open Profile"
+        className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-slate-700 text-xs font-semibold text-white transition hover:bg-emerald-300/20 hover:ring-2 hover:ring-emerald-300/40 active:scale-95"
+      >
+        {email.slice(0, 1).toUpperCase()}
+      </button>
+
+      <span className="hidden max-w-[140px] truncate text-xs text-slate-300 sm:block">
+        {email}
+      </span>
+
+      <ChevronDown size={14} className="hidden text-slate-500 sm:block" />
+    </div>
+
+    <button
+      onClick={onSignOut}
+      aria-label="Sign out"
+      title="Sign out"
+      className="ml-1 flex h-10 items-center justify-center gap-2 rounded-xl border border-rose-300/20 bg-rose-300/[.07] px-3 text-rose-200 transition hover:bg-rose-300/15 active:scale-95"
+    >
+      <LogOut size={17} />
+      <span className="hidden text-xs font-semibold sm:inline">Sign out</span>
+    </button>
+  </div>
+</header>
 
         <main className="mx-auto max-w-[1440px] p-5 md:p-8">
           {active === 'Overview' ? (
