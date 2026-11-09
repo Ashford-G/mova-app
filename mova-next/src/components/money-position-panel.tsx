@@ -1,8 +1,22 @@
 
-import { useEffect, useMemo, useState } from 'react'
-import { CalendarDays, CheckCircle2, Plus, Trash2, Wallet } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import type { FormEvent } from 'react'
+import {
+  CalendarDays,
+  CheckCircle2,
+  Plus,
+  Trash2,
+  Wallet,
+} from 'lucide-react'
+
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
 import type { Debt } from '@/lib/mova-data'
 
@@ -41,6 +55,7 @@ function dateString(date: Date) {
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
+
   return `${year}-${month}-${day}`
 }
 
@@ -56,6 +71,32 @@ function mapCommitment(row: any): Commitment {
   }
 }
 
+// Advances a recurring payment by one calendar month.
+// Clamps dates such as the 31st to the last valid day of the next month.
+function addOneMonth(dateValue: string) {
+  const [year, month, day] = dateValue.split('-').map(Number)
+
+  const nextMonth = month === 12 ? 1 : month + 1
+  const nextYear = month === 12 ? year + 1 : year
+
+  const lastDay = new Date(nextYear, nextMonth, 0).getDate()
+  const nextDay = Math.min(day, lastDay)
+
+  return `${nextYear}-${String(nextMonth).padStart(2, '0')}-${String(nextDay).padStart(2, '0')}`
+}
+
+function getNextMonthlyDate(dateValue: string, today: string) {
+  let nextDate = addOneMonth(dateValue)
+
+  // If the payment was overdue, move forward until the next
+  // scheduled occurrence is in the future.
+  while (nextDate <= today) {
+    nextDate = addOneMonth(nextDate)
+  }
+
+  return nextDate
+}
+
 export function MoneyPositionPanel({
   userId,
   currency,
@@ -66,11 +107,13 @@ export function MoneyPositionPanel({
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
+
   const [title, setTitle] = useState('')
   const [amount, setAmount] = useState('')
   const [category, setCategory] = useState('Essential')
   const [dueDate, setDueDate] = useState(dateString(new Date()))
-  const [frequency, setFrequency] = useState<'one_time' | 'monthly'>('one_time')
+  const [frequency, setFrequency] =
+    useState<'one_time' | 'monthly'>('one_time')
 
   useEffect(() => {
     let cancelled = false
@@ -87,7 +130,9 @@ export function MoneyPositionPanel({
 
       const { data, error } = await supabase
         .from('financial_commitments')
-        .select('id, title, category, amount, due_date, frequency, status')
+        .select(
+          'id, title, category, amount, due_date, frequency, status'
+        )
         .eq('user_id', userId)
         .order('due_date', { ascending: true })
 
@@ -103,39 +148,55 @@ export function MoneyPositionPanel({
     }
 
     loadCommitments()
-    return () => { cancelled = true }
+
+    return () => {
+      cancelled = true
+    }
   }, [userId])
 
   const today = dateString(new Date())
-  const monthEnd = new Date()
-  monthEnd.setMonth(monthEnd.getMonth() + 1, 0)
-  const lastDay = monthEnd.getDate()
+
+  const currentDate = new Date()
+  const monthEnd = new Date(
+    currentDate.getFullYear(),
+    currentDate.getMonth() + 1,
+    0
+  )
   const monthEndString = dateString(monthEnd)
 
-  const dueCommitments = useMemo(() => {
-    return commitments.filter(item => {
-      if (item.status !== 'pending' || !item.dueDate) return false
+  // Only pending commitments due on or before the end of this
+  // month are protected. Paid commitments are excluded.
+  const dueCommitments = commitments.filter(item => {
+    if (item.status !== 'pending' || !item.dueDate) {
+      return false
+    }
 
-      if (item.frequency === 'monthly') {
-        const dueDay = Number(item.dueDate.slice(8, 10))
-        return dueDay <= lastDay
-      }
-
-      return item.dueDate <= monthEndString
-    })
-  }, [commitments, monthEndString, lastDay])
+    return item.dueDate <= monthEndString
+  })
 
   const essentialTotal = dueCommitments
-    .filter(item => item.category === 'Essential' || item.category === 'Bill' || item.category === 'Other')
+    .filter(item =>
+      item.category === 'Essential' ||
+      item.category === 'Bill' ||
+      item.category === 'Other'
+    )
     .reduce((sum, item) => sum + item.amount, 0)
 
   const savingsCommitments = dueCommitments
     .filter(item => item.category === 'Savings')
     .reduce((sum, item) => sum + item.amount, 0)
 
+  // Debt repayments are included from debt records automatically.
+  // Do not add the same debt payment again as a manual commitment.
   const debtPayments = debts
     .filter(debt => {
-      if (debt.status !== 'active' || debt.monthlyPayment <= 0) return false
+      if (
+        debt.status !== 'active' ||
+        debt.monthlyPayment <= 0
+      ) {
+        return false
+      }
+
       return !debt.dueDate || debt.dueDate <= monthEndString
     })
     .reduce((sum, debt) => sum + debt.monthlyPayment, 0)
@@ -145,16 +206,26 @@ export function MoneyPositionPanel({
     .reduce((sum, debt) => sum + debt.balance, 0)
 
   const trueMoneyPosition = savings - totalDebt
-  const safeToSpend = savings - essentialTotal - savingsCommitments - debtPayments
 
-  async function addCommitment(event: React.FormEvent<HTMLFormElement>) {
+  const safeToSpend =
+    savings -
+    essentialTotal -
+    savingsCommitments -
+    debtPayments
+
+  async function addCommitment(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (saving || !supabase) return
+
+    if (saving || !supabase || !isSupabaseConfigured) return
 
     const cleanTitle = title.trim()
     const value = Number(amount)
 
-    if (!cleanTitle || !Number.isFinite(value) || value <= 0) {
+    if (
+      !cleanTitle ||
+      !Number.isFinite(value) ||
+      value <= 0
+    ) {
       setMessage('Enter a name and an amount greater than zero.')
       return
     }
@@ -173,32 +244,43 @@ export function MoneyPositionPanel({
         frequency,
         status: 'pending',
       })
-      .select('id, title, category, amount, due_date, frequency, status')
+      .select(
+        'id, title, category, amount, due_date, frequency, status'
+      )
       .single()
 
     if (error) {
       setMessage(`Could not save commitment: ${error.message}`)
     } else {
-      setCommitments(current => [...current, mapCommitment(data)])
+      setCommitments(current => [
+        ...current,
+        mapCommitment(data),
+      ])
+
       setTitle('')
       setAmount('')
-      setMessage('Commitment saved.')
+      setMessage('Commitment saved successfully.')
     }
 
     setSaving(false)
   }
 
   async function markPaid(item: Commitment) {
-    if (!supabase) return
+    if (!supabase || !isSupabaseConfigured) return
+
+    setMessage('')
 
     let update: Record<string, any>
 
     if (item.frequency === 'monthly' && item.dueDate) {
-      const nextDate = new Date(`${item.dueDate}T12:00:00`)
-      nextDate.setMonth(nextDate.getMonth() + 1)
-      update = { due_date: dateString(nextDate), status: 'pending' }
+      update = {
+        due_date: getNextMonthlyDate(item.dueDate, today),
+        status: 'pending',
+      }
     } else {
-      update = { status: 'paid' }
+      update = {
+        status: 'paid',
+      }
     }
 
     const { data, error } = await supabase
@@ -206,7 +288,9 @@ export function MoneyPositionPanel({
       .update(update)
       .eq('id', item.id)
       .eq('user_id', userId)
-      .select('id, title, category, amount, due_date, frequency, status')
+      .select(
+        'id, title, category, amount, due_date, frequency, status'
+      )
       .single()
 
     if (error) {
@@ -215,13 +299,20 @@ export function MoneyPositionPanel({
     }
 
     setCommitments(current =>
-      current.map(row => row.id === item.id ? mapCommitment(data) : row)
+      current.map(row =>
+        row.id === item.id ? mapCommitment(data) : row
+      )
     )
-    setMessage(`${item.title} updated.`)
+
+    setMessage(
+      item.frequency === 'monthly'
+        ? `${item.title} marked paid. Its next payment date has been scheduled.`
+        : `${item.title} marked as paid.`
+    )
   }
 
   async function deleteCommitment(id: string) {
-    if (!supabase) return
+    if (!supabase || !isSupabaseConfigured) return
 
     const { error } = await supabase
       .from('financial_commitments')
@@ -234,8 +325,11 @@ export function MoneyPositionPanel({
       return
     }
 
-    setCommitments(current => current.filter(item => item.id !== id))
-    setMessage('Commitment removed.')
+    setCommitments(current =>
+      current.filter(item => item.id !== id)
+    )
+
+    setMessage('Commitment removed successfully.')
   }
 
   return (
@@ -243,20 +337,30 @@ export function MoneyPositionPanel({
       <div className="grid gap-4 md:grid-cols-2">
         <Card className="border-emerald-300/15 bg-[#102331]">
           <CardContent className="p-5">
-            <p className="text-xs text-emerald-200">TRUE MONEY POSITION</p>
+            <p className="text-xs text-emerald-200">
+              TRUE MONEY POSITION
+            </p>
+
             <p className="mt-3 text-3xl font-semibold">
               {money(trueMoneyPosition, currency)}
             </p>
+
             <p className="mt-2 text-xs text-slate-400">
-              Current savings minus recorded outstanding debt
+              Your current savings minus your recorded outstanding debt.
             </p>
+
             <div className="mt-4 space-y-2 border-t border-white/10 pt-3 text-xs">
               <div className="flex justify-between">
-                <span className="text-slate-400">Current savings</span>
+                <span className="text-slate-400">
+                  Current savings
+                </span>
                 <span>{money(savings, currency)}</span>
               </div>
+
               <div className="flex justify-between">
-                <span className="text-slate-400">Outstanding debt</span>
+                <span className="text-slate-400">
+                  Outstanding debt
+                </span>
                 <span>{money(totalDebt, currency)}</span>
               </div>
             </div>
@@ -265,24 +369,43 @@ export function MoneyPositionPanel({
 
         <Card className="border-sky-300/15 bg-[#102331]">
           <CardContent className="p-5">
-            <p className="text-xs text-sky-200">SAFE-TO-SPEND</p>
-            <p className={`mt-3 text-3xl font-semibold ${safeToSpend < 0 ? 'text-rose-300' : 'text-white'}`}>
+            <p className="text-xs text-sky-200">
+              SAFE-TO-SPEND
+            </p>
+
+            <p
+              className={`mt-3 text-3xl font-semibold ${
+                safeToSpend < 0
+                  ? 'text-rose-300'
+                  : 'text-white'
+              }`}
+            >
               {money(safeToSpend, currency)}
             </p>
+
             <p className="mt-2 text-xs text-slate-400">
-              Savings after protecting your listed commitments
+              Your savings after protecting your recorded commitments.
             </p>
+
             <div className="mt-4 space-y-2 border-t border-white/10 pt-3 text-xs">
               <div className="flex justify-between">
-                <span className="text-slate-400">Essential bills and expenses</span>
+                <span className="text-slate-400">
+                  Essential bills and expenses
+                </span>
                 <span>{money(essentialTotal, currency)}</span>
               </div>
+
               <div className="flex justify-between">
-                <span className="text-slate-400">Debt repayments due</span>
+                <span className="text-slate-400">
+                  Debt repayments due
+                </span>
                 <span>{money(debtPayments, currency)}</span>
               </div>
+
               <div className="flex justify-between">
-                <span className="text-slate-400">Savings commitments</span>
+                <span className="text-slate-400">
+                  Savings commitments
+                </span>
                 <span>{money(savingsCommitments, currency)}</span>
               </div>
             </div>
@@ -296,13 +419,19 @@ export function MoneyPositionPanel({
             <CalendarDays size={18} />
             Upcoming commitments
           </CardTitle>
+
           <p className="text-xs text-slate-400">
-            Add bills, essential expenses and savings you want MOVA to protect.
-            Debt repayments are included automatically from your debt records.
+            Add bills, essential expenses and savings you want MOVA
+            to protect. Recorded debt repayments are included
+            automatically.
           </p>
         </CardHeader>
+
         <CardContent className="space-y-5">
-          <form onSubmit={addCommitment} className="grid gap-3 sm:grid-cols-2">
+          <form
+            onSubmit={addCommitment}
+            className="grid gap-3 sm:grid-cols-2"
+          >
             <input
               required
               value={title}
@@ -310,6 +439,7 @@ export function MoneyPositionPanel({
               placeholder="e.g. Electricity bill"
               className="rounded-xl border border-white/10 bg-[#0b1422] px-4 py-3 text-sm outline-none"
             />
+
             <input
               required
               type="number"
@@ -320,13 +450,19 @@ export function MoneyPositionPanel({
               placeholder={`Amount (${currency})`}
               className="rounded-xl border border-white/10 bg-[#0b1422] px-4 py-3 text-sm outline-none"
             />
+
             <select
               value={category}
               onChange={event => setCategory(event.target.value)}
               className="rounded-xl border border-white/10 bg-[#0b1422] px-4 py-3 text-sm"
             >
-              {categories.map(item => <option key={item}>{item}</option>)}
+              {categories.map(item => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
             </select>
+
             <input
               required
               type="date"
@@ -334,56 +470,109 @@ export function MoneyPositionPanel({
               onChange={event => setDueDate(event.target.value)}
               className="rounded-xl border border-white/10 bg-[#0b1422] px-4 py-3 text-sm"
             />
+
             <select
               value={frequency}
-              onChange={event => setFrequency(event.target.value as 'one_time' | 'monthly')}
+              onChange={event =>
+                setFrequency(
+                  event.target.value as 'one_time' | 'monthly'
+                )
+              }
               className="rounded-xl border border-white/10 bg-[#0b1422] px-4 py-3 text-sm sm:col-span-2"
             >
               <option value="one_time">One-time payment</option>
               <option value="monthly">Repeats monthly</option>
             </select>
-            <Button type="submit" disabled={saving} className="sm:col-span-2">
+
+            <Button
+              type="submit"
+              disabled={saving}
+              className="sm:col-span-2"
+            >
               <Plus size={16} className="mr-2" />
               {saving ? 'Saving...' : 'Add commitment'}
             </Button>
           </form>
 
           {message && (
-            <p role="status" className="rounded-xl border border-white/10 bg-white/[.03] p-3 text-xs text-slate-300">
+            <p
+              role="status"
+              className="rounded-xl border border-white/10 bg-white/[.03] p-3 text-xs text-slate-300"
+            >
               {message}
             </p>
           )}
 
           {loading ? (
-            <p className="py-5 text-center text-sm text-slate-500">Loading commitments...</p>
+            <p className="py-5 text-center text-sm text-slate-500">
+              Loading commitments...
+            </p>
           ) : commitments.length === 0 ? (
             <div className="rounded-xl border border-dashed border-white/10 p-6 text-center">
-              <Wallet className="mx-auto mb-2 text-slate-500" size={24} />
-              <p className="text-sm text-slate-300">No commitments added yet</p>
-              <p className="mt-1 text-xs text-slate-500">Add your upcoming bills to calculate a more accurate Safe-to-Spend amount.</p>
+              <Wallet
+                className="mx-auto mb-2 text-slate-500"
+                size={24}
+              />
+              <p className="text-sm text-slate-300">
+                No commitments added yet
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                Add your upcoming bills to calculate a more accurate
+                Safe-to-Spend amount.
+              </p>
             </div>
           ) : (
             <div className="space-y-2">
               {commitments.map(item => (
-                <div key={item.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/[.07] bg-white/[.02] p-3">
+                <div
+                  key={item.id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-white/[.07] bg-white/[.02] p-3"
+                >
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{item.title}</p>
-                    <p className="mt-1 text-xs text-slate-500">
-                      {item.category} · {item.dueDate || 'No due date'} · {item.frequency === 'monthly' ? 'Monthly' : 'One-time'}
+                    <p className="truncate text-sm font-medium">
+                      {item.title}
                     </p>
-                    <p className="mt-1 text-sm font-semibold">{money(item.amount, currency)}</p>
-                    <p className={`mt-1 text-[10px] ${item.status === 'paid' ? 'text-emerald-300' : 'text-amber-200'}`}>
+
+                    <p className="mt-1 text-xs text-slate-500">
+                      {item.category} · {item.dueDate || 'No due date'} ·{' '}
+                      {item.frequency === 'monthly'
+                        ? 'Monthly'
+                        : 'One-time'}
+                    </p>
+
+                    <p className="mt-1 text-sm font-semibold">
+                      {money(item.amount, currency)}
+                    </p>
+
+                    <p
+                      className={`mt-1 text-[10px] ${
+                        item.status === 'paid'
+                          ? 'text-emerald-300'
+                          : 'text-amber-200'
+                      }`}
+                    >
                       {item.status === 'paid' ? 'Paid' : 'Pending'}
                     </p>
                   </div>
+
                   <div className="flex items-center gap-2">
                     {item.status === 'pending' && (
-                      <Button size="sm" variant="outline" onClick={() => markPaid(item)}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => markPaid(item)}
+                      >
                         <CheckCircle2 size={14} className="mr-1" />
                         Paid
                       </Button>
                     )}
-                    <Button size="icon" variant="ghost" onClick={() => deleteCommitment(item.id)} aria-label="Delete commitment">
+
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => deleteCommitment(item.id)}
+                      aria-label="Delete commitment"
+                    >
                       <Trash2 size={15} />
                     </Button>
                   </div>
@@ -391,8 +580,12 @@ export function MoneyPositionPanel({
               ))}
             </div>
           )}
+
           <p className="text-[10px] leading-5 text-slate-500">
-            Estimates use the savings balance and commitments recorded in MOVA. Add all relevant bills and update your savings regularly. Do not add debt repayments here; MOVA includes recorded debt repayments automatically.
+            Estimates use your recorded savings, pending commitments
+            and active debt repayments. Keep your records up to date.
+            Do not add debt repayments here because MOVA includes
+            recorded debt repayments automatically.
           </p>
         </CardContent>
       </Card>
