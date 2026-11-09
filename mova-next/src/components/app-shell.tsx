@@ -957,12 +957,27 @@ export function AppShell({
             <div className="ml-1 flex items-center gap-2 border-l border-white/10 pl-2 sm:ml-2 sm:pl-3">
               <div className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-slate-700 text-xs font-semibold">
                 {email.slice(0, 1).toUpperCase()}
-              </div>
-              <span className="hidden max-w-[140px] truncate text-xs text-slate-300 sm:block">
-                {email}
-              </span>
-              <ChevronDown size={14} className="hidden text-slate-500 sm:block" />
-            </div>
+
+                <div className="ml-1 flex items-center gap-2 border-l border-white/10 pl-2 sm:ml-2 sm:pl-3">
+  <button
+    type="button"
+    onClick={() => {
+      setActive('Profile')
+      setMobileOpen(false)
+    }}
+    aria-label="Open Profile"
+    title="Open Profile"
+    className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-slate-700 text-xs font-semibold text-white transition hover:bg-emerald-300/20 hover:ring-2 hover:ring-emerald-300/40 active:scale-95"
+  >
+    {email.slice(0, 1).toUpperCase()}
+  </button>
+
+  <span className="hidden max-w-[140px] truncate text-xs text-slate-300 sm:block">
+    {email}
+  </span>
+
+  <ChevronDown size={14} className="hidden text-slate-500 sm:block" />
+</div>
             <button
               onClick={onSignOut}
               aria-label="Sign out"
