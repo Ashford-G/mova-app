@@ -1121,14 +1121,20 @@ export function AppShell({
                 </Card>
               </div>
             </>
-          ) : active === 'Intelligence' ? (
-            <IntelligencePanel
-              userId={userId}
-              currency={currency}
-              currentSavings={dashboard?.currentSavings ?? 0}
-              debts={dashboard?.debts ?? []}
-              goals={dashboard?.goals ?? []}
-            />
+
+  ) : active === 'Intelligence' ? (
+  <ProFeatureGate
+    feature="financial_intelligence"
+    onUpgrade={() => setActive('Profile')}
+  >
+    <IntelligencePanel
+      userId={userId}
+      currency={currency}
+      currentSavings={dashboard?.currentSavings ?? 0}
+      debts={dashboard?.debts ?? []}
+      goals={dashboard?.goals ?? []}
+    />
+  </ProFeatureGate>
           ) : active === 'Savings' ? (
             <div className="mx-auto max-w-3xl space-y-6">
               <div>
