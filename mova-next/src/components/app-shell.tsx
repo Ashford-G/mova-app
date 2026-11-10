@@ -39,6 +39,8 @@ import { ProfilePanel } from '@/components/profile-panel'
 
 import { AiCoachPanel } from '@/components/ai-coach-panel'
 
+import { ProFeatureGate } from '@/components/pro-feature-gate'
+
 import { isSupabaseConfigured, supabase } from '@/lib/supabase'
 
 import {
