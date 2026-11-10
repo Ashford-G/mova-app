@@ -266,9 +266,36 @@ export function AiCoachPanel({ userId, currency }: Props) {
     )
   }
 
+  // Read monthly allowance without consuming a live AI request.
+  async function loadUsage() {
+    if (!supabase) return
+
+    const { data, error: usageError } = await supabase.rpc(
+      'get_ai_coach_usage'
+    )
+
+    if (usageError || !data) {
+      console.error('Could not load AI Coach usage:', usageError)
+      return
+    }
+
+    setUsage({
+      plan: data.plan,
+      used: Number(data.used),
+      limit: Number(data.limit),
+      remaining: Number(data.remaining),
+    })
+  }
+
   useEffect(() => {
+    setUsage(null)
+
     async function initialise() {
-      await Promise.all([loadCoachData(), loadHistory()])
+      await Promise.all([
+        loadCoachData(),
+        loadHistory(),
+        loadUsage(),
+      ])
     }
 
     initialise()
@@ -325,7 +352,14 @@ export function AiCoachPanel({ userId, currency }: Props) {
         }
 
         if (aiData.usage) {
-          setUsage(aiData.usage)
+          setUsage({
+            plan: aiData.usage.plan,
+            used: Number(aiData.usage.used),
+            limit: Number(aiData.usage.limit),
+            remaining: Number(aiData.usage.remaining),
+          })
+        } else {
+          await loadUsage()
         }
 
         setMessages(current => [newMessage, ...current])
@@ -338,7 +372,14 @@ export function AiCoachPanel({ userId, currency }: Props) {
         aiError?.context?.status === 429
 
       if (monthlyLimitReached && aiData?.usage) {
-        setUsage(aiData.usage)
+        setUsage({
+          plan: aiData.usage.plan,
+          used: Number(aiData.usage.used),
+          limit: Number(aiData.usage.limit),
+          remaining: Number(aiData.usage.remaining),
+        })
+      } else if (monthlyLimitReached) {
+        await loadUsage()
       }
 
       // Preserve unlimited built-in guidance.
