@@ -1,12 +1,440 @@
+
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
+
 @theme {
   --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Manrope", ui-sans-serif, system-ui, sans-serif;
 }
-:root { color-scheme: dark; font-family: var(--font-sans); font-synthesis: none; text-rendering: optimizeLegibility; }
-* { box-sizing: border-box; }
-body { margin: 0; min-width: 320px; background: #080f1b; }
-button, input { font: inherit; }
-h1,h2,h3 { font-family: var(--font-display); }
-::selection { background: rgba(110,231,183,.25); color: white; }
+
+/* -----------------------------------------
+   MOVA VISUAL SYSTEM
+   Clean, premium, light fintech interface
+------------------------------------------ */
+
+:root {
+  color-scheme: light;
+  font-family: var(--font-sans);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+
+  --mova-bg: #f5f7f6;
+  --mova-surface: #ffffff;
+  --mova-surface-soft: #f8faf9;
+  --mova-border: #e7ece9;
+  --mova-ink: #17231f;
+  --mova-muted: #77837d;
+  --mova-accent: #15966d;
+  --mova-accent-soft: #e7f5ef;
+  --mova-shadow: 0 8px 28px rgba(23, 43, 34, 0.045);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background: var(--mova-bg);
+  color: var(--mova-ink);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  letter-spacing: -0.025em;
+}
+
+::selection {
+  background: rgba(21, 150, 109, 0.18);
+  color: #123d2e;
+}
+
+/* -----------------------------------------
+   APPLICATION BACKGROUND
+------------------------------------------ */
+
+[class*="min-h-screen"][class*="bg-[#080f1b]"] {
+  background:
+    radial-gradient(
+      circle at 85% 0%,
+      rgba(21, 150, 109, 0.045),
+      transparent 28rem
+    ),
+    var(--mova-bg) !important;
+  color: var(--mova-ink) !important;
+}
+
+/* -----------------------------------------
+   SIDEBAR
+------------------------------------------ */
+
+[class*="bg-[#0b1422]"] {
+  background: var(--mova-surface) !important;
+}
+
+aside {
+  background: var(--mova-surface) !important;
+  border-color: var(--mova-border) !important;
+}
+
+aside [class*="border-b"] {
+  border-color: var(--mova-border) !important;
+}
+
+aside button {
+  border-radius: 12px;
+  transition:
+    background 180ms ease,
+    color 180ms ease,
+    transform 180ms ease;
+}
+
+aside button:hover {
+  background: #f1f6f3 !important;
+  color: #176c50 !important;
+}
+
+aside button:active {
+  transform: scale(0.985);
+}
+
+/* -----------------------------------------
+   TOP HEADER
+------------------------------------------ */
+
+header {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: var(--mova-border) !important;
+  box-shadow: 0 3px 16px rgba(20, 40, 30, 0.025);
+  backdrop-filter: blur(18px);
+}
+
+header [class*="border-l"] {
+  border-color: var(--mova-border) !important;
+}
+
+/* -----------------------------------------
+   TEXT COLOURS
+------------------------------------------ */
+
+.text-white,
+.text-slate-100,
+.text-slate-200 {
+  color: var(--mova-ink) !important;
+}
+
+.text-slate-300 {
+  color: #59665f !important;
+}
+
+.text-slate-400 {
+  color: #748078 !important;
+}
+
+.text-slate-500 {
+  color: #89948e !important;
+}
+
+.text-slate-600 {
+  color: #9aa49e !important;
+}
+
+.text-emerald-200 {
+  color: #16845f !important;
+}
+
+.text-emerald-100\/70 {
+  color: #438b70 !important;
+}
+
+/* Keep intentionally dark premium feature panels readable. */
+
+[class*="from-[#142c36]"],
+[class*="from-[#142c36]"] .text-white,
+[class*="from-[#142c36]"] .text-slate-100,
+[class*="from-[#142c36]"] .text-slate-200 {
+  color: #ffffff !important;
+}
+
+[class*="from-[#142c36]"] .text-slate-300 {
+  color: #d1ddd8 !important;
+}
+
+[class*="from-[#142c36]"] .text-slate-400 {
+  color: #b0c1ba !important;
+}
+
+[class*="from-[#142c36]"] .text-slate-500 {
+  color: #91a79d !important;
+}
+
+/* -----------------------------------------
+   CARDS AND PANELS
+------------------------------------------ */
+
+[class*="bg-white/"],
+[class*="bg-white["] {
+  background-color: var(--mova-surface) !important;
+}
+
+[class*="border-white/"],
+[class*="border-white["] {
+  border-color: var(--mova-border) !important;
+}
+
+[class*="bg-[#101a29]"] {
+  background: #f0f5f2 !important;
+}
+
+[class*="bg-[#102331]"] {
+  background: #edf5f1 !important;
+}
+
+main > div[class*="rounded-2xl"],
+main [class*="rounded-2xl"][class*="border"] {
+  box-shadow: var(--mova-shadow);
+}
+
+main [class*="rounded-xl"][class*="border"] {
+  border-color: var(--mova-border);
+}
+
+/* -----------------------------------------
+   BUTTONS
+------------------------------------------ */
+
+button {
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(21, 150, 109, 0.22);
+  outline-offset: 2px;
+}
+
+button[class*="bg-emerald-300"],
+button[class*="bg-emerald-400"] {
+  box-shadow: 0 5px 14px rgba(21, 150, 109, 0.13);
+}
+
+button[class*="bg-emerald-300"]:hover,
+button[class*="bg-emerald-400"]:hover {
+  box-shadow: 0 8px 20px rgba(21, 150, 109, 0.18);
+  transform: translateY(-1px);
+}
+
+button[class*="border-rose-300"] {
+  background: #fff6f5 !important;
+  border-color: #f3d9d6 !important;
+  color: #b84d46 !important;
+}
+
+/* -----------------------------------------
+   INPUTS AND FORMS
+------------------------------------------ */
+
+input,
+select,
+textarea {
+  color: var(--mova-ink);
+}
+
+input:not([type="checkbox"]):not([type="radio"]),
+select,
+textarea {
+  background-color: #ffffff;
+  border-color: #dfe7e2;
+  border-radius: 11px;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #a0aaa4;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #69b99a !important;
+  box-shadow: 0 0 0 3px rgba(21, 150, 109, 0.09);
+}
+
+/* -----------------------------------------
+   FINANCIAL VISUAL ELEMENTS
+------------------------------------------ */
+
+[class*="bg-emerald-300/10"],
+[class*="bg-emerald-300/[.06]"] {
+  background-color: #eaf6f0 !important;
+}
+
+[class*="border-emerald-300/15"],
+[class*="border-emerald-300/20"] {
+  border-color: #d5eae0 !important;
+}
+
+[class*="bg-sky-300/10"] {
+  background: #edf5fc !important;
+}
+
+[class*="bg-rose-300/10"] {
+  background: #fff0ef !important;
+}
+
+[class*="bg-amber-300/[.05]"] {
+  background: #fff8e9 !important;
+}
+
+[class*="bg-gradient-to-br"][class*="from-[#142c36]"] {
+  background: linear-gradient(135deg, #153c32, #142b2c 55%, #172c3b) !important;
+  border-color: rgba(21, 150, 109, 0.24) !important;
+  box-shadow: 0 14px 35px rgba(15, 50, 38, 0.12);
+}
+
+/* -----------------------------------------
+   ANIMATION AND MOTION
+------------------------------------------ */
+
+@keyframes mova-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes mova-fade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+main > * {
+  animation: mova-rise 420ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+main > *:nth-child(2) {
+  animation-delay: 45ms;
+}
+
+main > *:nth-child(3) {
+  animation-delay: 85ms;
+}
+
+main > *:nth-child(4) {
+  animation-delay: 125ms;
+}
+
+main [class*="grid"] > div,
+main [class*="grid"] > section {
+  transition:
+    transform 220ms ease,
+    box-shadow 220ms ease,
+    border-color 220ms ease;
+}
+
+main [class*="grid"] > div:hover,
+main [class*="grid"] > section:hover {
+  transform: translateY(-2px);
+}
+
+main [class*="rounded-2xl"][class*="border"]:hover {
+  border-color: #d6e7dd;
+}
+
+svg {
+  transition: color 180ms ease;
+}
+
+/* -----------------------------------------
+   SCROLLBARS
+------------------------------------------ */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #d5dfd9 transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #d5dfd9;
+  border-radius: 20px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* -----------------------------------------
+   MOBILE EXPERIENCE
+------------------------------------------ */
+
+@media (max-width: 640px) {
+  main {
+    padding: 18px !important;
+  }
+
+  header {
+    height: 68px !important;
+  }
+
+  main [class*="rounded-2xl"] {
+    border-radius: 17px;
+  }
+}
+
+/* -----------------------------------------
+   ACCESSIBILITY
+------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
