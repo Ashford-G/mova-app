@@ -10,6 +10,7 @@ import {
   TrendingUp,
   RefreshCw,
   MessageCircle,
+  Zap,
 } from 'lucide-react'
 
 import {
@@ -38,6 +39,13 @@ type CoachMessage = {
   question: string
   answer: string
   createdAt: string
+}
+
+type UsageInfo = {
+  plan: 'free' | 'pro'
+  used: number
+  limit: number
+  remaining: number
 }
 
 const suggestions = [
@@ -192,6 +200,7 @@ export function AiCoachPanel({ userId, currency }: Props) {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [usingFallback, setUsingFallback] = useState(false)
+  const [usage, setUsage] = useState<UsageInfo | null>(null)
 
   async function loadCoachData() {
     setLoading(true)
@@ -308,7 +317,6 @@ export function AiCoachPanel({ userId, currency }: Props) {
         })
 
       if (!aiError && aiData?.answer) {
-        // The Edge Function already saves successful AI conversations.
         const newMessage: CoachMessage = {
           id: aiData.id,
           question: cleanQuestion,
@@ -316,17 +324,24 @@ export function AiCoachPanel({ userId, currency }: Props) {
           createdAt: aiData.createdAt || new Date().toISOString(),
         }
 
+        if (aiData.usage) {
+          setUsage(aiData.usage)
+        }
+
         setMessages(current => [newMessage, ...current])
         setQuestion('')
         return
       }
 
-      // If live AI is unavailable, keep MOVA's original guidance working.
-      console.warn(
-        'MOVA AI unavailable; using built-in guidance:',
-        aiError || aiData?.error
-      )
+      const monthlyLimitReached =
+        aiData?.code === 'AI_MONTHLY_LIMIT_REACHED' ||
+        aiError?.context?.status === 429
 
+      if (monthlyLimitReached && aiData?.usage) {
+        setUsage(aiData.usage)
+      }
+
+      // Preserve unlimited built-in guidance.
       const fallbackAnswer = createAdvice(
         cleanQuestion,
         dashboard,
@@ -362,9 +377,21 @@ export function AiCoachPanel({ userId, currency }: Props) {
       setMessages(current => [newMessage, ...current])
       setQuestion('')
       setUsingFallback(true)
-      setNotice(
-        'The live AI service was unavailable, so MOVA used its built-in guidance instead.'
-      )
+
+      if (monthlyLimitReached) {
+        setNotice(
+          'You have used your monthly live AI allowance. You can still ask MOVA using unlimited built-in financial guidance.'
+        )
+      } else {
+        console.warn(
+          'MOVA AI unavailable; using built-in guidance:',
+          aiError || aiData?.error
+        )
+
+        setNotice(
+          'Live AI is temporarily unavailable, so MOVA used its built-in guidance instead. This did not consume a live AI question.'
+        )
+      }
     } catch (err) {
       setNotice(
         err instanceof Error
@@ -375,6 +402,10 @@ export function AiCoachPanel({ userId, currency }: Props) {
       setAsking(false)
     }
   }
+
+  const usagePercent = usage
+    ? Math.min((usage.used / usage.limit) * 100, 100)
+    : 0
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -416,6 +447,52 @@ export function AiCoachPanel({ userId, currency }: Props) {
           </div>
         </CardContent>
       </Card>
+
+      {usage && (
+        <Card className="border-emerald-300/15">
+          <CardContent className="space-y-3 p-4 md:p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <Zap size={17} className="text-emerald-200" />
+                <p className="text-sm font-medium">
+                  Monthly live AI allowance
+                </p>
+              </div>
+
+              <span className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-xs font-semibold uppercase text-emerald-200">
+                {usage.plan}
+              </span>
+            </div>
+
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <p className="text-2xl font-semibold">
+                  {usage.remaining}
+                  <span className="ml-1 text-sm font-normal text-slate-400">
+                    remaining
+                  </span>
+                </p>
+              </div>
+
+              <p className="text-xs text-slate-400">
+                {usage.used} of {usage.limit} used
+              </p>
+            </div>
+
+            <div className="h-2 overflow-hidden rounded-full bg-white/10">
+              <div
+                className="h-full rounded-full bg-emerald-300 transition-all"
+                style={{ width: `${usagePercent}%` }}
+              />
+            </div>
+
+            <p className="text-xs leading-5 text-slate-400">
+              Your live AI allowance resets at the beginning of each month.
+              Built-in MOVA guidance remains available without a monthly limit.
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-3 sm:grid-cols-2">
         <Card>
@@ -525,7 +602,7 @@ export function AiCoachPanel({ userId, currency }: Props) {
           {notice && (
             <p
               role="status"
-              className="rounded-xl border border-white/10 bg-white/[.03] p-3 text-xs text-slate-300"
+              className="rounded-xl border border-white/10 bg-white/[.03] p-3 text-xs leading-5 text-slate-300"
             >
               {notice}
             </p>
