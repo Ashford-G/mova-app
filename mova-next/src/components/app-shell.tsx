@@ -865,9 +865,9 @@ export function AppShell({
                     setMobileOpen(false)
                   }}
                   className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[13px] transition ${
-                    active === item.label
-                      ? 'bg-emerald-300/10 text-emerald-200'
-                      : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                   active === item.label
+  ? 'bg-emerald-300/15 text-[#f4fff9] ring-1 ring-inset ring-emerald-300/30 shadow-[0_0_18px_rgba(32,212,154,0.08)]'
+  : 'text-slate-400 hover:bg-white/5 hover:text-white' 
                   }`}
                 >
                   <item.icon size={17} />
