@@ -868,7 +868,15 @@ export function AppShell({
                    active === item.label
   ? 'bg-emerald-300/15 text-[#f4fff9] ring-1 ring-inset ring-emerald-300/30 shadow-[0_0_18px_rgba(32,212,154,0.08)]'
   : 'text-slate-400 hover:bg-white/5 hover:text-white' 
-                  }`}
+                  }`} style={
+  active === item.label
+    ? {
+        color: '#f4fff9',
+        backgroundColor: 'rgba(32, 212, 154, 0.16)',
+        border: '1px solid rgba(32, 212, 154, 0.35)',
+      }
+    : undefined
+                  }
                 >
                   <item.icon size={17} />
                   {item.label}
