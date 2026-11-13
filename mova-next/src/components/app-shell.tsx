@@ -248,6 +248,7 @@ export function AppShell({
   const [dataError, setDataError] = useState<string | null>(null)
 
   const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [editingTransactionId, setEditingTransactionId] = useState<string | null>(null)
   const [transactionLoading, setTransactionLoading] = useState(false)
   const [transactionSaving, setTransactionSaving] = useState(false)
   const [transactionMessage, setTransactionMessage] = useState('')
