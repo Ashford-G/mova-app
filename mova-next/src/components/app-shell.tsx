@@ -578,6 +578,37 @@ export function AppShell({
   }
 }
 
+function startEditingTransaction(transaction: Transaction) {
+  setEditingTransactionId(transaction.id)
+  setTransactionAmount(String(transaction.amount))
+  setTransactionCategory(transaction.category)
+  setTransactionDescription(transaction.title)
+  setTransactionDate(transaction.date)
+
+  setTransactionType(
+    transaction.direction === 'in'
+      ? 'income'
+      : transaction.direction === 'out'
+        ? 'expense'
+        : 'transfer'
+  )
+
+  setTransactionMessage('')
+}
+
+function cancelEditingTransaction() {
+  setEditingTransactionId(null)
+  setTransactionAmount('')
+  setTransactionCategory('Food')
+  setTransactionDescription('')
+  setTransactionType('expense')
+  setTransactionDate(() => {
+    const now = new Date()
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+  })
+  setTransactionMessage('')
+}
+  
   async function handleCreateGoal(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (goalSaving) return
