@@ -531,41 +531,52 @@ export function AppShell({
   }
 
   async function handleCreateTransaction(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (transactionSaving) return
+  event.preventDefault()
+  if (transactionSaving) return
 
-    setTransactionSaving(true)
-    setTransactionMessage('')
+  setTransactionSaving(true)
+  setTransactionMessage('')
 
-    try {
-      await createTransaction(userId, {
-        amount: Number(transactionAmount),
-        type: transactionType,
-        category: transactionCategory,
-        description: transactionDescription,
-        date: transactionDate,
-      })
-
-      const [updatedTransactions, updatedDashboard] = await Promise.all([
-        loadTransactions(userId),
-        loadDashboardData(userId),
-      ])
-
-      setTransactions(updatedTransactions)
-      setDashboard(updatedDashboard)
-      setTransactionAmount('')
-      setTransactionDescription('')
-      setTransactionType('expense')
-      setTransactionCategory('Food')
-      setTransactionMessage('Transaction saved successfully.')
-    } catch (error) {
-      setTransactionMessage(
-        getErrorMessage(error) || 'Could not save transaction.'
-      )
-    } finally {
-      setTransactionSaving(false)
-    }
+  const input: TransactionInput = {
+    amount: Number(transactionAmount),
+    type: transactionType,
+    category: transactionCategory,
+    description: transactionDescription,
+    date: transactionDate,
   }
+
+  try {
+    if (editingTransactionId) {
+      await updateTransaction(userId, editingTransactionId, input)
+    } else {
+      await createTransaction(userId, input)
+    }
+
+    const [updatedTransactions, updatedDashboard] = await Promise.all([
+      loadTransactions(userId),
+      loadDashboardData(userId),
+    ])
+
+    setTransactions(updatedTransactions)
+    setDashboard(updatedDashboard)
+    setEditingTransactionId(null)
+    setTransactionAmount('')
+    setTransactionDescription('')
+    setTransactionType('expense')
+    setTransactionCategory('Food')
+    setTransactionMessage(
+      editingTransactionId
+        ? 'Transaction updated successfully.'
+        : 'Transaction saved successfully.'
+    )
+  } catch (error) {
+    setTransactionMessage(
+      getErrorMessage(error) || 'Could not save transaction.'
+    )
+  } finally {
+    setTransactionSaving(false)
+  }
+}
 
   async function handleCreateGoal(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
