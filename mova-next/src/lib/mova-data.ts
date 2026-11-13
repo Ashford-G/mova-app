@@ -17,6 +17,27 @@ export type TransactionInput = {
   date: string
 }
 
+import {
+  loadDashboardData,
+  loadTransactions,
+  createTransaction,
+  updateTransaction,
+  deleteTransaction,
+  loadGoals,
+  createGoal,
+  updateGoalProgress,
+  loadDebts,
+  createDebt,
+  updateDebtBalance,
+  updateSavings,
+  type DashboardData,
+  type Transaction,
+  type TransactionInput,
+  type Goal,
+  type Debt,
+  type DebtInput,
+} from '@/lib/mova-data'
+
 export type Goal = {
   id: string
   title: string
