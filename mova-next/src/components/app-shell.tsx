@@ -13,10 +13,12 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  Pencil,
   PiggyBank,
   Search,
   ShieldCheck,
   Sparkles,
+  Trash2,
   Wallet,
 } from 'lucide-react'
 
@@ -28,27 +30,6 @@ import {
   CardHeader,
   CardTitle,
 
-import {
-  ArrowDownLeft,
-  ArrowUpRight,
-  Bell,
-  ChevronDown,
-  CircleHelp,
-  Command,
-  CreditCard,
-  Gauge,
-  Goal as GoalIcon,
-  LayoutDashboard,
-  LogOut,
-  Menu,
-  Pencil,
-  PiggyBank,
-  Search,
-  ShieldCheck,
-  Sparkles,
-  Trash2,
-  Wallet,
-} from 'lucide-react'
   
 } from '@/components/ui/card'
 
