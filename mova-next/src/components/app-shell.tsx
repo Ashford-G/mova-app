@@ -1364,12 +1364,23 @@ function cancelEditingTransaction() {
                       <input type="date" required value={transactionDate} onChange={event => setTransactionDate(event.target.value)} className="w-full rounded-xl border border-white/10 bg-[#0b1422] px-4 py-3 text-sm text-white outline-none" />
                     </div>
                     <Button type="submit" disabled={transactionSaving} className="w-full">
-                      {transactionSaving
-  ? 'Saving...'
-  : editingTransactionId
-    ? 'Save changes'
-    : 'Save transaction'}
-                    </Button>
+  {transactionSaving
+    ? 'Saving...'
+    : editingTransactionId
+      ? 'Save changes'
+      : 'Save transaction'}
+</Button>
+
+{editingTransactionId && (
+  <Button
+    type="button"
+    variant="outline"
+    onClick={cancelEditingTransaction}
+    className="w-full"
+  >
+    Cancel editing
+  </Button>
+)}
                     {transactionMessage && <p role="status" className="text-xs text-slate-300">{transactionMessage}</p>}
                   </form>
                 </CardContent>
