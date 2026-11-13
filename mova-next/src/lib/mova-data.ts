@@ -454,6 +454,84 @@ export async function loadTransactions(
   return (data ?? []).map(mapTransaction)
 }
 
+
+
+/*Transaction editing and deletion*/
+
+
+export async function updateTransaction(
+  userId: string,
+  transactionId: string,
+  input: TransactionInput
+): Promise<Transaction> {
+  const client = requireConnection(userId)
+
+  if (!transactionId) {
+    throw new Error('Please select a transaction to update.')
+  }
+
+  if (!Number.isFinite(input.amount) || input.amount <= 0) {
+    throw new Error('Enter a valid amount greater than zero.')
+  }
+
+  if (!input.category.trim()) {
+    throw new Error('Please select a transaction category.')
+  }
+
+  if (!input.date) {
+    throw new Error('Please select a transaction date.')
+  }
+
+  const { data, error } = await client
+    .from('transactions')
+    .update({
+      amount: input.amount,
+      transaction_type: input.type,
+      category: input.category.trim(),
+      description: input.description.trim(),
+      transaction_date: input.date,
+    })
+    .eq('id', transactionId)
+    .eq('user_id', userId)
+    .select(
+      'id, amount, transaction_type, category, description, transaction_date'
+    )
+    .single()
+
+  if (error) {
+    throw new Error(`Could not update transaction: ${error.message}`)
+  }
+
+  return mapTransaction(data)
+}
+
+export async function deleteTransaction(
+  userId: string,
+  transactionId: string
+): Promise<void> {
+  const client = requireConnection(userId)
+
+  if (!transactionId) {
+    throw new Error('Please select a transaction to delete.')
+  }
+
+  const { data, error } = await client
+    .from('transactions')
+    .delete()
+    .eq('id', transactionId)
+    .eq('user_id', userId)
+    .select('id')
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(`Could not delete transaction: ${error.message}`)
+  }
+
+  if (!data) {
+    throw new Error('Transaction was not found or could not be deleted.')
+  }
+}
+
 /* ============================================================
    GOALS
    ============================================================ */
