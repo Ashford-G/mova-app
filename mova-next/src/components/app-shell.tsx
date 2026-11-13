@@ -1324,7 +1324,11 @@ function cancelEditingTransaction() {
               </div>
 
               <Card>
-                <CardHeader><CardTitle>New transaction</CardTitle></CardHeader>
+                <CardHeader>
+  <CardTitle>
+    {editingTransactionId ? 'Edit transaction' : 'New transaction'}
+  </CardTitle>
+</CardHeader>
                 <CardContent>
                   <form onSubmit={handleCreateTransaction} className="space-y-4">
                     <div className="grid grid-cols-3 gap-2">
@@ -1360,7 +1364,11 @@ function cancelEditingTransaction() {
                       <input type="date" required value={transactionDate} onChange={event => setTransactionDate(event.target.value)} className="w-full rounded-xl border border-white/10 bg-[#0b1422] px-4 py-3 text-sm text-white outline-none" />
                     </div>
                     <Button type="submit" disabled={transactionSaving} className="w-full">
-                      {transactionSaving ? 'Saving...' : 'Save transaction'}
+                      {transactionSaving
+  ? 'Saving...'
+  : editingTransactionId
+    ? 'Save changes'
+    : 'Save transaction'}
                     </Button>
                     {transactionMessage && <p role="status" className="text-xs text-slate-300">{transactionMessage}</p>}
                   </form>
