@@ -608,6 +608,41 @@ function cancelEditingTransaction() {
   })
   setTransactionMessage('')
 }
+
+  async function handleDeleteTransaction(transaction: Transaction) {
+  const confirmed = window.confirm(
+    'Are you sure you want to delete this transaction? This action cannot be undone.'
+  )
+
+  if (!confirmed || transactionSaving) return
+
+  setTransactionSaving(true)
+  setTransactionMessage('')
+
+  try {
+    await deleteTransaction(userId, transaction.id)
+
+    const [updatedTransactions, updatedDashboard] = await Promise.all([
+      loadTransactions(userId),
+      loadDashboardData(userId),
+    ])
+
+    setTransactions(updatedTransactions)
+    setDashboard(updatedDashboard)
+
+    if (editingTransactionId === transaction.id) {
+      cancelEditingTransaction()
+    }
+
+    setTransactionMessage('Transaction deleted successfully.')
+  } catch (error) {
+    setTransactionMessage(
+      getErrorMessage(error) || 'Could not delete transaction.'
+    )
+  } finally {
+    setTransactionSaving(false)
+  }
+}
   
   async function handleCreateGoal(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
