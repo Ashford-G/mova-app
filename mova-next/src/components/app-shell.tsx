@@ -51,6 +51,8 @@ import {
   loadDashboardData,
   loadTransactions,
   createTransaction,
+  updateTransaction,
+  deleteTransaction,
   loadGoals,
   createGoal,
   updateGoalProgress,
