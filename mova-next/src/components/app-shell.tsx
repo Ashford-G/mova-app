@@ -1413,10 +1413,34 @@ function cancelEditingTransaction() {
                               <p className="mt-1 text-[10px] text-slate-500">{transaction.category} · {transaction.date}</p>
                             </div>
                           </div>
-                          <p className="shrink-0 text-sm font-semibold">
-                            {transaction.direction === 'in' ? '+' : transaction.direction === 'out' ? '−' : ''}
-                            {formatMoney(transaction.amount, currency)}
-                          </p>
+
+<div className="flex shrink-0 items-center gap-2">
+  <p className="text-sm font-semibold">
+    {transaction.direction === 'in' ? '+' : transaction.direction === 'out' ? '−' : ''}
+    {formatMoney(transaction.amount, currency)}
+  </p>
+
+  <button
+    type="button"
+    onClick={() => startEditingTransaction(transaction)}
+    title="Edit transaction"
+    aria-label="Edit transaction"
+    className="rounded-lg p-2 text-slate-400 hover:bg-white/10 hover:text-emerald-200"
+  >
+    <Pencil size={16} />
+  </button>
+
+  <button
+    type="button"
+    onClick={() => handleDeleteTransaction(transaction)}
+    title="Delete transaction"
+    aria-label="Delete transaction"
+    className="rounded-lg p-2 text-slate-400 hover:bg-red-500/10 hover:text-red-300"
+  >
+    <Trash2 size={16} />
+  </button>
+</div>
+                          
                         </div>
                       ))}
                     </div>
